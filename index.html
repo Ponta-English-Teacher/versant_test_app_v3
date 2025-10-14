@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Versant Test Preparation (ver.3 + countdown)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 30px;
+      max-width: 800px;
+      margin: auto;
+    }
+    .section {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+    textarea {
+      width: 100%;
+      height: 100px;
+      font-size: 16px;
+      padding: 10px;
+      margin-top: 10px;
+    }
+    .button-group, .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      color: white;
+      min-width: 100px;
+      flex: 1;
+    }
+    .green { background-color: #34A853; }
+    .purple { background-color: #9C27B0; }
+    .orange { background-color: #f90; color: black; }
+    .gray { background-color: #ccc; color: black; }
+    .blue { background-color: #4285F4; }
+    .dark { background-color: #333; }
+
+    #status, #repeatStatus, #questionStatus, #sentenceStatus, #storyStatus, #opinionStatus {
+      margin-top: 15px;
+      font-weight: bold;
+      color: #444;
+      min-height: 1.2em;
+    }
+
+    #hintBox, #ratingBox, #repeatRatingBox, #questionRatingBox, #sentenceRatingBox, #storyRatingBox, #opinionRatingBox {
+      margin-top: 15px;
+      padding: 10px;
+      display: none;
+    }
+    #hintBox { background: #f0f8ff; border-left: 4px solid #9C27B0; }
+    #ratingBox, #repeatRatingBox, #questionRatingBox, #sentenceRatingBox, #storyRatingBox, #opinionRatingBox {
+      background: #fff3e0; border-left: 4px solid #f90;
+    }
+
+    /* recording indicator */
+    .blink { animation: blink 1s steps(2, start) infinite; }
+    @keyframes blink { to { visibility: hidden; } }
+
+    /* countdown number styling */
+    .cd {
+      font-variant-numeric: tabular-nums;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ========================= -->
+<!-- Section 1: Reading Aloud -->
+<!-- ========================= -->
+<div class="section" id="readingSection">
+  <h2>📖 Versant Reading Practice</h2>
+  <p style="font-size: 16px; color: #555;">
+    📋 <strong>Directions:</strong> Listen carefully and read the sentence aloud.<br>
+    Focus on natural pronunciation, rhythm, and fluency.<br>
+    Minor mistakes in punctuation and capitalization are not important.
+  </p>
+  <p id="promptText">The museum will close early today due to a private event.</p>
+  <textarea id="userResponse" placeholder="Your spoken or typed response appears here..."></textarea>
+
+  <div class="button-group">
+    <button class="orange" onclick="startReadingRecording()">🎙️ Speak</button>
+    <button class="gray" id="playRecordingButton" onclick="playBlob(recordedReadingBlob)" disabled>▶️ Play My Recording</button>
+    <button class="purple" onclick="getReadingHint()">💡 Hint</button>
+    <button class="blue" onclick="rateReading()">⭐ Rate My Work</button>
+    <button class="green" onclick="speakText(document.getElementById('promptText').innerText, 'reading')">🔊 Listen</button>
+    <button class="dark" onclick="getNewReadingPrompt()">🔄 Another</button>
+    <button class="gray" onclick="document.getElementById('userResponse').focus()">✍️ Type</button>
+  </div>
+
+  <div id="status"></div>
+  <div id="hintBox"></div>
+  <div id="ratingBox"></div>
+</div>
+
+<!-- ========================= -->
+<!-- Section 2: Repeat -->
+<!-- ========================= -->
+<div class="section" id="repeatSection">
+  <h2>🎤 Versant Repeat Sentences Practice</h2>
+  <p style="font-size: 16px; color: #555;">
+    📋 <strong>Directions:</strong> Listen carefully and repeat exactly what you hear.<br>
+    Focus on copying the words, word order, and meaning.<br>
+    Minor differences in punctuation and capitalization are not important.
+  </p>
+  <p id="repeatPromptText">[Prompt will appear here]</p>
+  <textarea id="repeatUserResponse" placeholder="Your repeated sentence will appear here..."></textarea>
+
+  <div class="button-group">
+    <button class="green" onclick="ensureRepeatPromptAndPlay()">🔊 Listen</button>
+    <button class="orange" onclick="startRepeatRecording()">🎙️ Repeat Now</button>
+    <button class="gray" onclick="playBlob(recordedRepeatBlob)">▶️ Play My Recording</button>
+    <button class="purple" onclick="showOriginalRepeat()">📖 Show Sentence</button>
+    <button class="blue" onclick="rateRepeat()">⭐ Rate My Work</button>
+    <button class="dark" onclick="getNewRepeatPrompt()">🔄 Another</button>
+  </div>
+
+  <div id="repeatStatus"></div>
+  <div id="repeatRatingBox"></div>
+</div>
+
+<!-- ========================= -->
+<!-- Section 3: Questions -->
+<!-- ========================= -->
+<div class="section" id="questionSection">
+  <h2>🎤 Versant Questions Practice</h2>
+  <p style="font-size: 16px; color: #555;">
+    📋 <strong>Directions:</strong> Listen carefully to the question.<br>
+    Answer with a short, natural response. Complex grammar is not required.<br>
+    Punctuation and capitalization are not important.
+  </p>
+  <p style="font-size: 16px; color: #555;">
+    <em>Example:</em> Question: "Where do you live?" → Good Answer: "In Tokyo." / "I live in Tokyo."
+  </p>
+  <p id="questionPromptText">[Press 🔊 Listen to hear the question]</p>
+  <textarea id="questionUserResponse" placeholder="Your answer will appear here..."></textarea>
+
+  <div class="button-group">
+    <button class="green" onclick="playQuestion()">🔊 Listen</button>
+    <button class="orange" onclick="startQuestionRecording()">🎙️ Answer Now</button>
+    <button class="gray" onclick="document.getElementById('questionUserResponse').focus()">✍️ Type Answer</button>
+    <button class="gray" onclick="playBlob(recordedAnswerBlob)">▶️ Play My Work</button>
+    <button class="purple" onclick="showOriginalQuestion()">📖 View Question</button>
+    <button class="blue" onclick="rateQuestion()">⭐ Rate My Work</button>
+    <button class="dark" onclick="loadAnotherQuestion()">🔄 Another Question</button>
+  </div>
+
+  <div id="questionStatus"></div>
+  <div id="questionRatingBox"></div>
+</div>
+
+<!-- ========================= -->
+<!-- Section 4: Sentence Build -->
+<!-- ========================= -->
+<div class="section" id="sentenceBuildSection">
+  <h2>🛠️ Versant Sentence Build Practice</h2>
+  <p style="font-size: 16px; color: #555;">
+    📋 <strong>Directions:</strong> You will hear three short phrases. Build a full, natural English sentence using all the ideas.
+  </p>
+  <p style="font-size: 16px; color: #555;">
+    ✅ <em>Example:</em> the dog → run → in the park → “The dog is running in the park.”
+  </p>
+  <p id="sentencePromptText">[Phrases will appear here]</p>
+  <textarea id="sentenceUserResponse" placeholder="Your full sentence will appear here..."></textarea>
+
+  <div class="button-group">
+    <button class="green" onclick="playSentencePhrases()">🔊 Listen</button>
+    <button class="orange" onclick="startSentenceRecording()">🎙️ Speak Now</button>
+    <button class="gray" onclick="document.getElementById('sentenceUserResponse').focus()">✍️ Type Answer</button>
+    <button class="gray" onclick="playBlob(recordedSentenceBlob)">▶️ Play My Work</button>
+    <button class="purple" onclick="showSentencePhrases()">📖 Show Phrases</button>
+    <button class="blue" onclick="rateSentence()">⭐ Rate My Work</button>
+    <button class="dark" onclick="loadAnotherSentence()">🔄 Another Set</button>
+  </div>
+
+  <div id="sentenceStatus"></div>
+  <div id="sentenceRatingBox"></div>
+</div>
+
+<!-- ========================= -->
+<!-- Section 5: Story Retelling -->
+<!-- ========================= -->
+<div class="section" id="storyRetellSection">
+  <h2>📖 Versant Story Retelling Practice</h2>
+  <p style="font-size: 16px; color: #555;">
+    📋 <strong>Directions:</strong> Listen once. Retell the story in your own words (30s).<br>
+    ⭐ After speaking, click "Rate My Work" for feedback.
+  </p>
+  <p id="storyPromptText">[Press 🔊 Listen to hear the story]</p>
+  <textarea id="storyUserResponse" placeholder="Your retelling will appear here..."></textarea>
+
+  <div class="button-group">
+    <button class="green" onclick="playStory()">🔊 Listen</button>
+    <button class="orange" onclick="startStoryRecording()">🎙️ Start Retelling</button>
+    <button class="gray" id="stopStoryButton" onclick="stopStoryRecording()" disabled>⏹️ Stop</button>
+    <button class="gray" id="playStoryButton" onclick="playBlob(recordedStoryBlob)" disabled>▶️ Play My Work</button>
+    <button class="purple" onclick="redoStory()">🔁 Redo</button>
+    <button class="blue" onclick="showOriginalStory()">📖 View Story</button>
+    <button class="blue" onclick="rateStory()">⭐ Rate My Work</button>
+    <button class="dark" onclick="loadNewStory()">🔄 Next Story</button>
+  </div>
+
+  <div id="storyStatus"></div>
+  <div id="storyRatingBox" style="display:none;"></div>
+</div>
+
+<!-- ========================= -->
+<!-- Section 6: Opinion Speaking -->
+<!-- ========================= -->
+<div class="section" id="opinionSpeakingSection">
+  <h2>💬 Versant Opinion Speaking Practice</h2>
+  <p style="font-size: 16px; color: #555;">
+    📋 <strong>Directions:</strong> Listen to the question. Think briefly (~3s). Speak clearly for 20–30 seconds (max 40s).
+  </p>
+  <p id="opinionPromptText">[Press 🔊 Listen to hear the question]</p>
+  <textarea id="opinionUserResponse" placeholder="Your answer will appear here..."></textarea>
+
+  <div class="button-group">
+    <button class="green" onclick="playOpinion()">🔊 Listen</button>
+    <button class="orange" onclick="startOpinionRecording()">🎙️ Start Speaking</button>
+    <button class="gray" id="stopOpinionButton" onclick="stopOpinionRecording()" disabled>⏹️ Stop</button>
+    <button class="gray" id="playOpinionButton" onclick="playBlob(recordedOpinionBlob)" disabled>▶️ Play My Work</button>
+    <button class="purple" onclick="redoOpinion()">🔁 Redo</button>
+    <button class="blue" onclick="showOriginalOpinion()">📖 View Question</button>
+    <button class="blue" onclick="rateOpinion()">⭐ Rate My Work</button>
+    <button class="dark" onclick="nextOpinion()">🔄 Next Question</button>
+  </div>
+
+  <div id="opinionStatus"></div>
+  <div id="opinionRatingBox" style="display:none;"></div>
+</div>
+
+<script>
+/* =========================================================
+   SHARED HELPERS (TTS & STT)
+   ========================================================= */
+
+async function speakText(text, where = "general") {
+  try {
+    statusUpdate(where, "🔊 Playing...");
+    const resp = await fetch("/api/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        input: { text },
+        voice: { languageCode: "en-US", name: "en-US-Wavenet-D" },
+        audioConfig: { audioEncoding: "MP3" }
+      })
+    });
+    const data = await resp.json();
+    if (!data || !data.audioContent) {
+      statusUpdate(where, "❌ Failed to synthesize audio.");
+      return;
+    }
+    const audio = new Audio("data:audio/mp3;base64," + data.audioContent);
+    audio.play();
+  } catch (e) {
+    statusUpdate(where, "❌ TTS error.");
+  }
+}
+
+async function transcribeAudio(blob, where = "general") {
+  try {
+    statusUpdate(where, "📝 Transcribing...");
+    const base64 = await blobToBase64(blob);
+    const resp = await fetch("/api/stt", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        config: {
+          encoding: "WEBM_OPUS",
+          languageCode: "en-US",
+          enableAutomaticPunctuation: true
+        },
+        audio: { content: base64.split(",")[1] }
+      })
+    });
+    const data = await resp.json();
+    const transcript = data?.results?.[0]?.alternatives?.[0]?.transcript || "(No speech detected)";
+    statusUpdate(where, "✅ Transcribed!");
+    return transcript;
+  } catch (e) {
+    statusUpdate(where, "❌ STT error.");
+    return "";
+  }
+}
+
+function statusUpdate(where, msg, timeout = 3000) {
+  const id = ({
+    reading: "status",
+    repeat: "repeatStatus",
+    question: "questionStatus",
+    sentence: "sentenceStatus",
+    story: "storyStatus",
+    opinion: "opinionStatus",
+    general: "status"
+  })[where] || "status";
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = msg;
+  if (timeout > 0) setTimeout(() => { if (el.innerHTML === msg) el.innerHTML = ""; }, timeout);
+}
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+function playBlob(blob) {
+  if (!blob) {
+    alert("No recording available yet!");
+    return;
+  }
+  const audio = new Audio(URL.createObjectURL(blob));
+  audio.play();
+}
+
+/* =========================================================
+   RECORDING UI HELPERS (lock buttons + countdown)
+   ========================================================= */
+const SECTION_IDS = {
+  reading: "readingSection",
+  repeat: "repeatSection",
+  question: "questionSection",
+  sentence: "sentenceBuildSection",
+  story: "storyRetellSection",
+  opinion: "opinionSpeakingSection",
+};
+const countdownTimers = {}; // { where: {end, timerId} }
+
+function setRecordingState(where, isRecording, stopButtonId = null) {
+  const sec = document.getElementById(SECTION_IDS[where]);
+  if (!sec) return;
+  sec.querySelectorAll("button").forEach(btn => {
+    if (isRecording && stopButtonId && btn.id === stopButtonId) {
+      btn.disabled = false;   // keep Stop enabled
+    } else {
+      btn.disabled = isRecording;
+    }
+  });
+}
+
+function showRecordingStatus(where, maxSec) {
+  // initialize countdown state
+  startCountdown(where, maxSec);
+}
+
+function startCountdown(where, totalSec) {
+  const end = Date.now() + totalSec * 1000;
+  // clear any existing timer
+  stopCountdown(where);
+  countdownTimers[where] = {
+    end,
+    timerId: setInterval(() => {
+      const now = Date.now();
+      const remainingMs = Math.max(0, end - now);
+      const remaining = Math.ceil(remainingMs / 1000);
+      statusUpdate(where, `🎙️ Recording… (max <span class="cd">${totalSec}</span>s) · <span class="cd">${remaining}</span>s left <span class="blink">●</span>`, 0);
+      if (remainingMs <= 0) stopCountdown(where);
+    }, 200)
+  };
+}
+
+function stopCountdown(where) {
+  const st = countdownTimers[where];
+  if (st && st.timerId) clearInterval(st.timerId);
+  countdownTimers[where] = null;
+}
+
+/* =========================================================
+   SECTION 1: READING
+   ========================================================= */
+let recordedReadingBlob = null;
+
+async function startReadingRecording() {
+  setRecordingState("reading", true);
+  showRecordingStatus("reading", 5);
+
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const rec = new MediaRecorder(stream);
+  const chunks = [];
+  rec.ondataavailable = e => chunks.push(e.data);
+  rec.onstop = async () => {
+    stopCountdown("reading");
+    setRecordingState("reading", false);
+    statusUpdate("reading", "⏹️ Recording stopped.", 1500);
+
+    recordedReadingBlob = new Blob(chunks, { type: "audio/webm" });
+    document.getElementById("playRecordingButton").disabled = false;
+
+    const text = await transcribeAudio(recordedReadingBlob, "reading");
+    document.getElementById("userResponse").value = text || "";
+  };
+  rec.start();
+  setTimeout(() => rec.stop(), 5000);
+}
+
+async function getNewReadingPrompt() {
+  statusUpdate("reading", "🔄 Getting new sentence...");
+  const res = await fetch("/api/openai", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: "Give me a simple English sentence for reading aloud (10-15 words)." }]
+    })
+  });
+  const data = await res.json();
+  const sentence = data?.choices?.[0]?.message?.content?.trim() || "";
+  if (sentence) {
+    document.getElementById("promptText").innerText = sentence;
+    document.getElementById("userResponse").value = "";
+    document.getElementById("ratingBox").style.display = "none";
+    document.getElementById("hintBox").style.display = "none";
+    statusUpdate("reading", "✅ New prompt ready.");
+  } else {
+    statusUpdate("reading", "❌ Failed to get prompt.");
+  }
+}
+
+async function getReadingHint() {
+  statusUpdate("reading", "💡 Getting hint...");
+  const prompt = document.getElementById("promptText").innerText;
+  const res = await fetch("/api/openai", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "gpt-3.5-turbo",
+      messages: [
+        { role: "system", content: "You are an English tutor helping Japanese learners with pronunciation. Ignore punctuation and capitalization entirely." },
+        { role: "user", content: `Give a short pronunciation hint for reading: "${prompt}"` }
+      ]
+    })
+  });
+  const data = await res.json();
+  const hint = data?.choices?.[0]?.message?.content?.trim() || "No hint available.";
+  const box = document.getElementById("hintBox");
+  box.innerHTML = `<strong>Hint:</strong><br>${hint}`;
+  box.style.display = "block";
+  statusUpdate("reading", "✅ Hint ready.");
+}
+
+async function rateReading() {
+  const original = document.getElementById("promptText").innerText;
+  const student = (document.getElementById("userResponse").value || "").trim();
+  if (!student) { statusUpdate("reading", "⚠️ No input to rate."); return; }
+
+  statusUpdate("reading", "🧠 Evaluating...");
+  const res = await fetch("/api/openai", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "gpt-3.5-turbo",
+      messages: [
+        { role: "system", content:
+`You are a helpful English evaluator.
+Judge ONLY word content, essential word order, and meaning clarity.
+Completely ignore punctuation and capitalization; do not mention them.
+Format:
+Score: X / 5
+Feedback: [short supportive comment on word accuracy/flow]` },
+        { role: "user", content: `Original: "${original}"\nStudent: "${student}"` }
+      ]
+    })
+  });
+  const data = await res.json();
+  const feedback = data?.choices?.[0]?.message?.content?.trim() || "❌ No feedback.";
+  const box = document.getElementById("ratingBox");
+  box.innerHTML = `<strong>Rating:</strong><br>${feedback}
+    <div style="margin-top:10px;font-size:12px;color:gray;">⚡ Note: Punctuation/capitalization are ignored.</div>`;
+  box.style.display = "block";
+  statusUpdate("reading", "✅ Rating complete.");
+}
+
+/* =========================================================
+   SECTION 2: REPEAT
+   ========================================================= */
+let repeatPrompt = "";
+let recordedRepeatBlob = null;
+let repeatShown = false;
+
+async function getNewRepeatPrompt() {
+  statusUpdate("repeat", "🔄 Getting new repeat sentence...");
+  const res = await fetch("/api/openai", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content:
+"Give me one very simple English sentence (5–10 words) for speaking practice. Only one clear idea; avoid long sequences and conjunctions. A2–early B1, natural spoken English." }]
+    })
+  });
+  const data = await res.json();
+  repeatPrompt = data?.choices?.[0]?.message?.content?.trim() || "";
+  document.getElementById("repeatPromptText").innerText = repeatPrompt ? "[Prompt is ready. Click 🔊]" : "❌ Failed to load prompt";
+  document.getElementById("repeatUserResponse").value = "";
+  document.getElementById("repeatRatingBox").style.display = "none";
+  repeatShown = false;
+  statusUpdate("repeat", repeatPrompt ? "✅ New prompt ready." : "❌ Error.");
+}
+
+async function ensureRepeatPromptAndPlay() {
+  if (!repeatPrompt) await getNewRepeatPrompt();
+  if (repeatPrompt) speakText(repeatPrompt, "repeat");
+}
+
+function showOriginalRepeat() {
+  if (!repeatPrompt) { alert("Please click Listen first!"); return; }
+  document.getElementById("repeatPromptText").innerText = repeatPrompt;
+  repeatShown = true;
+  statusUpdate("repeat", "👁️ Original sentence shown.");
+}
+
+async function startRepeatRecording() {
+  setRecordingState("repeat", true);
+  showRecordingStatus("repeat", 4);
+
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const rec = new MediaRecorder(stream);
+  const chunks = [];
+  rec.ondataavailable = e => chunks.push(e.data);
+  rec.onstop = async () => {
+    stopCountdown("repeat");
+    setRecordingState("repeat", false);
+    statusUpdate("repeat", "⏹️ Recording stopped.", 1500);
+
+    recordedRepeatBlob = new Blob(chunks, { type: "audio/webm" });
+    const text = await transcribeAudio(recordedRepeatBlob, "repeat");
+    document.getElementById("repeatUserResponse").value = text || "";
+  };
+  rec.start();
+  setTimeout(() => rec.stop(), 4000);
+}
+
+async function rateRepeat() {
+  if (!repeatPrompt) { alert("Please click Listen first!"); return; }
+  const student = (document.getElementById("repeatUserResponse").value || "").trim();
+  if (!student) { alert("Please record or type your answer first!"); return; }
+
+  statusUpdate("repeat", "🧠 Evaluating...");
+  const res = await fetch("/api/openai", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "gpt-3.5-turbo",
+      messages: [
+        { role: "system", content:
+`You are an English evaluator.
+Strictly judge word content, essential order, and meaning clarity.
+Completely ignore punctuation and capitalization; do not mention them.
+Format:
+Score: X / 5
+Feedback: [one-sentence supportive advice about word content/order]` },
+        { role: "user", content: `Original: "${repeatPrompt}"\nStudent: "${student}"` }
+      ]
+    })
+  });
+  const data = await res.json();
+  const feedback = data?.choices?.[0]?.message?.content?.trim() || "❌ No feedback.";
+  const box = document.getElementById("repeatRatingBox");
+  box.innerHTML = `<strong>Rating:</strong><br>${feedback}
+    <div style="margin-top:10px;font-size:12px;color:gray;">⚡ Note: Punctuation/capitalization are ignored.</div>`;
+  box.style.display = "block";
+  statusUpdate("repeat", "✅ Rating complete.");
+}
+
+/* =========================================================
+   SECTION 3: QUESTIONS
+   ========================================================= */
+let questionList = [];
+let currentQuestion = "";
+let recordedAnswerBlob = null;
+
+async function preloadQuestions() {
+  statusUpdate("question", "🧠 Loading questions...");
+  const res = await fetch("/api/openai", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content:
+"Give me 30 very simple English questions for speaking practice (6–12 words), everyday life. One per line." }]
+    })
+  });
+  const data = await res.json();
+  const text = data?.choices?.[0]?.message?.content || "";
+  questionList = text.split("\n").map(s => s.replace(/^\d+\.\s*/, "").trim()).filter(Boolean);
+  statusUpdate("question", questionList.length ? "✅ 30 Questions Loaded!" : "❌ Failed to load questions.");
+  loadAnotherQuestion();
+}
+
+function loadAnotherQuestion() {
+  if (!questionList.length) { statusUpdate("question", "⚠️ No questions loaded yet."); return; }
+  const i = Math.floor(Math.random() * questionList.length);
+  currentQuestion = questionList[i];
+  document.getElementById("questionPromptText").innerText = "[Press 🔊 Listen to hear the question]";
+  document.getElementById("questionUserResponse").value = "";
+  document.getElementById("questionRatingBox").style.display = "none";
+  statusUpdate("question", "✅ New question ready.");
+}
+
+function showOriginalQuestion() {
+  if (!currentQuestion) { statusUpdate("question", "⚠️ No question loaded yet."); return; }
+  document.getElementById("questionPromptText").innerText = currentQuestion;
+  statusUpdate("question", "👁️ Question shown.");
+}
+
+function playQuestion() {
+  if (!currentQuestion) { statusUpdate("question", "⚠️ Load a question first."); return; }
+  speakText(currentQuestion, "question");
+}
+
+async function startQuestionRecording() {
+  setRecordingState("question", true);
+  showRecordingStatus("question", 8);
+
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const rec = new MediaRecorder(stream);
+  const chunks = [];
+  rec.ondataavailable = e => chunks.push(e.data);
+  rec.onstop = async () => {
+    stopCountdown("question");
+    setRecordingState("question", false);
+    statusUpdate("question", "⏹️ Recording stopped.", 1500);
+
+    recordedAnswerBlob = new Blob(chunks, { type: "audio/webm" });
+    const text = await transcribeAudio(recordedAnswerBlob, "question");
+    document.getElementById("questionUserResponse").value = text || "";
+  };
+  rec.start();
+  setTimeout(() => rec.stop(), 8000);
+}
+
+async function rateQuestion() {
+  if (!currentQuestion) { alert("⚠️ Load a question first!"); return; }
+  const student = (document.getElementById("questionUserResponse").value || "").trim();
+  if (!student) { alert("⚠️ Record or type your answer first!"); return; }
+  statusUpdate("question", "🧠 Evaluating...");
+
+  const res = await fetch("/api/openai", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "gpt-3.5-turbo",
+      messages: [
+        { role: "system", content:
+`You are an English evaluator.
+Judge word content and meaning clarity only; ignore punctuation and capitalization.
+Format:
+Score: X / 5
+Feedback: [short supportive comment]` },
+        { role: "user", content: `Question: "${currentQuestion}"\nStudent's Answer: "${student}"` }
+      ]
+    })
+  });
+  const data = await res.json();
+  const feedback = data?.choices?.[0]?.message?.content?.trim() || "❌ No feedback.";
+  const box = document.getElementById("questionRatingBox");
+  box.innerHTML = `<strong>Rating:</strong><br>${feedback}
+    <div style="margin-top:10px;font-size:12px;color:gray;">⚡ Note: Punctuation/capitalization are ignored.</div>`;
+  box.style.display = "block";
+  statusUpdate("question", "✅ Rating complete.");
+}
+
+/* =========================================================
+   SECTION 4: SENTENCE BUILD
+   ========================================================= */
+let sentenceList = [];
+let currentPhrases = [];
+let recordedSentenceBlob = null;
+
+async function preloadSentences() {
+  statusUpdate("sentence", "🧠 Loading sentence builds...");
+  const res = await fetch("/api/openai", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content:
+`Give me 30 very simple English sentence builds (A2–early B1).
+Each line has 3 phrases separated by "|".
+Example: the boy | plays | soccer after school` }]
+    })
+  });
+  const data = await res.json();
+  const text = data?.choices?.[0]?.message?.content || "";
+  sentenceList = text.split("\n").map(s => s.replace(/^\d+\.\s*/, "").trim()).filter(Boolean);
+  statusUpdate("sentence", sentenceList.length ? "✅ 30 Sentence Sets Loaded!" : "❌ Failed to load.");
+  loadAnotherSentence();
+}
+
+function loadAnotherSentence() {
+  if (!sentenceList.length) { statusUpdate("sentence", "⚠️ No sentences loaded yet."); return; }
+  const i = Math.floor(Math.random() * sentenceList.length);
+  currentPhrases = sentenceList[i].split("|").map(s => s.trim());
+  document.getElementById("sentencePromptText").innerText = "[Phrases are ready. Please click 🔊 Listen]";
+  document.getElementById("sentenceUserResponse").value = "";
+  document.getElementById("sentenceRatingBox").style.display = "none";
+  statusUpdate("sentence", "✅ New set ready.");
+}
+
+async function playSentencePhrases() {
+  if (currentPhrases.length !== 3) { statusUpdate("sentence", "⚠️ No phrase set ready."); return; }
+  statusUpdate("sentence", "🔊 Playing phrases...");
+  for (const phrase of currentPhrases) {
+    await speakText(phrase, "sentence");
+    await new Promise(r => setTimeout(r, 800));
+  }
+}
+
+function showSentencePhrases() {
+  if (!currentPhrases.length) { statusUpdate("sentence", "⚠️ No set loaded."); return; }
+  document.getElementById("sentencePromptText").innerText = currentPhrases.join(" → ");
+  statusUpdate("sentence", "👁️ Phrases shown.");
+}
+
+async function startSentenceRecording() {
+  setRecordingState("sentence", true);
+  showRecordingStatus("sentence", 6);
+
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const rec = new MediaRecorder(stream);
+  const chunks = [];
+  rec.ondataavailable = e => chunks.push(e.data);
+  rec.onstop = async () => {
+    stopCountdown("sentence");
+    setRecordingState("sentence", false);
+    statusUpdate("sentence", "⏹️ Recording stopped.", 1500);
+
+    recordedSentenceBlob = new Blob(chunks, { type: "audio/webm" });
+    const text = await transcribeAudio(recordedSentenceBlob, "sentence");
+    document.getElementById("sentenceUserResponse").value = text || "";
+  };
+  rec.start();
+  setTimeout(() => rec.stop(), 6000);
+}
+
+async function rateSentence() {
+  if (currentPhrases.length !== 3) { alert("⚠️ Load a sentence set first!"); return; }
+  const student = (document.getElementById("sentenceUserResponse").value || "").trim();
+  if (!student) { alert("⚠️ Record or type your sentence first!"); return; }
+  statusUpdate("sentence", "🧠 Evaluating...");
+
+  const res = await fetch("/api/openai", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "gpt-3.5-turbo",
+      messages: [
+        { role: "system", content:
+`You are an English evaluator.
+Evaluate word content, natural order, and meaning clarity.
+Completely ignore punctuation and capitalization.
+Format:
+Score: X / 5
+Feedback: [supportive, short comment]` },
+        { role: "user", content: `Phrases: "${currentPhrases.join(' → ')}"\nStudent's Sentence: "${student}"` }
+      ]
+    })
+  });
+  const data = await res.json();
+  const feedback = data?.choices?.[0]?.message?.content?.trim() || "❌ No feedback.";
+  const box = document.getElementById("sentenceRatingBox");
+  box.innerHTML = `<strong>Rating:</strong><br>${feedback}
+    <div style="margin-top:10px;font-size:12px;color:gray;">⚡ Note: Punctuation/capitalization are ignored.</div>`;
+  box.style.display = "block";
+  statusUpdate("sentence", "✅ Rating complete.");
+}
+
+/* =========================================================
+   SECTION 5: STORY RETELLING
+   ========================================================= */
+const storyList = [
+  "A young boy planted a tree in his backyard. After several years, it grew taller than his house.",
+  "A woman found a wallet on the sidewalk and returned it to its owner the next day.",
+  "During a heavy snowstorm, a bus driver helped passengers get home safely by taking a longer route.",
+  "A man was walking his dog when he found a lost kitten hiding under a bench.",
+  "A group of friends decided to build a treehouse together during their summer vacation.",
+  "A teacher organized a charity run to raise money for a new school library.",
+  "A tourist lost his map in the city, but a local shop owner kindly helped him find his hotel.",
+  "A baker tried a new recipe and accidentally created a cake that became very popular.",
+  "A family adopted a rescue dog that quickly became part of their daily life.",
+  "Two sisters made a surprise birthday party for their grandmother, who was very touched."
+];
+let currentStory = "";
+let recordedStoryBlob = null;
+let mediaRecorderStory = null;
+let storyTimer = null;
+
+function loadNewStory() {
+  if (!storyList.length) { statusUpdate("story", "⚠️ No stories."); return; }
+  const i = Math.floor(Math.random() * storyList.length);
+  currentStory = storyList[i];
+  document.getElementById("storyPromptText").innerText = "[Press 🔊 Listen to hear the story]";
+  document.getElementById("storyUserResponse").value = "";
+  document.getElementById("storyRatingBox").style.display = "none";
+  recordedStoryBlob = null;
+  document.getElementById("playStoryButton").disabled = true;
+  document.getElementById("stopStoryButton").disabled = true;
+  statusUpdate("story", "✅ New story loaded.");
+}
+
+function showOriginalStory() {
+  if (!currentStory) { statusUpdate("story", "⚠️ No story loaded."); return; }
+  document.getElementById("storyPromptText").innerText = currentStory;
+  statusUpdate("story", "👁️ Original story shown.");
+}
+
+function playStory() {
+  if (!currentStory) { statusUpdate("story", "⚠️ Load a story first."); return; }
+  speakText(currentStory, "story");
+}
+
+async function startStoryRecording() {
+  setRecordingState("story", true, "stopStoryButton");
+  showRecordingStatus("story", 30);
+
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  mediaRecorderStory = new MediaRecorder(stream);
+  const chunks = [];
+  mediaRecorderStory.ondataavailable = e => chunks.push(e.data);
+  mediaRecorderStory.onstop = async () => {
+    stopCountdown("story");
+    setRecordingState("story", false, "stopStoryButton");
+    statusUpdate("story", "⏹️ Recording stopped.", 1500);
+
+    recordedStoryBlob = new Blob(chunks, { type: "audio/webm" });
+    document.getElementById("playStoryButton").disabled = false;
+    document.getElementById("stopStoryButton").disabled = true;
+
+    const text = await transcribeAudio(recordedStoryBlob, "story");
+    document.getElementById("storyUserResponse").value = text || "";
+    statusUpdate("story", "✅ Transcribed! Now click ⭐ Rate My Work!");
+  };
+  mediaRecorderStory.start();
+  storyTimer = setTimeout(() => {
+    if (mediaRecorderStory.state !== "inactive") mediaRecorderStory.stop();
+  }, 30000);
+  document.getElementById("stopStoryButton").disabled = false;
+}
+
+function stopStoryRecording() {
+  if (mediaRecorderStory && mediaRecorderStory.state === "recording") {
+    mediaRecorderStory.stop();
+    clearTimeout(storyTimer);
+  }
+}
+
+async function rateStory() {
+  const transcript = (document.getElementById("storyUserResponse").value || "").trim();
+  if (!transcript) { statusUpdate("story", "⚠️ No retelling to rate."); return; }
+  statusUpdate("story", "🧠 Evaluating...");
+
+  const res = await fetch("/api/openai", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "gpt-3.5-turbo",
+      messages: [
+        { role: "system", content:
+`You are a kind, supportive English evaluator for story retelling.
+Judge coverage of the given story only (no imagined details).
+Completely ignore punctuation and capitalization.
+Scoring: 5 clear coverage → 1 no understandable speech.
+Format:
+Score: X / 5
+Feedback: [positive comment + one technical tip]` },
+        { role: "user", content: `Student's Retelling: "${transcript}"` }
+      ]
+    })
+  });
+  const data = await res.json();
+  const feedback = data?.choices?.[0]?.message?.content?.trim() || "❌ No feedback.";
+  const box = document.getElementById("storyRatingBox");
+  box.innerHTML = `<strong>Feedback:</strong><br>${feedback}
+    <div style="margin-top:10px;font-size:12px;color:gray;">🌟 Focus on retelling given content. Punctuation/caps ignored.</div>`;
+  box.style.display = "block";
+  statusUpdate("story", "✅ Evaluation complete!");
+}
+
+/* =========================================================
+   SECTION 6: OPINION
+   ========================================================= */
+const opinionQuestions = [
+  "Do you prefer living in a big city or a small town? Why?",
+  "Is it better to work in a team or alone? Give reasons.",
+  "Should students wear school uniforms? Why or why not?",
+  "Do you think technology makes life easier or harder? Explain.",
+  "Is it more important to enjoy your job or to earn a high salary? Support your answer."
+];
+let currentOpinionIndex = 0;
+let currentOpinion = opinionQuestions[0];
+let recordedOpinionBlob = null;
+let mediaRecorderOpinion = null;
+let opinionTimer = null;
+
+function prepareOpinion() {
+  currentOpinionIndex = 0;
+  currentOpinion = opinionQuestions[currentOpinionIndex];
+  document.getElementById("opinionPromptText").innerText = "[Press 🔊 Listen to hear the question]";
+  document.getElementById("opinionUserResponse").value = "";
+  document.getElementById("opinionRatingBox").style.display = "none";
+  statusUpdate("opinion", "✅ Ready! Press 🔊 Listen.");
+}
+
+function nextOpinion() {
+  currentOpinionIndex = (currentOpinionIndex + 1) % opinionQuestions.length;
+  currentOpinion = opinionQuestions[currentOpinionIndex];
+  document.getElementById("opinionPromptText").innerText = "[Press 🔊 Listen to hear the question]";
+  document.getElementById("opinionUserResponse").value = "";
+  document.getElementById("opinionRatingBox").style.display = "none";
+  recordedOpinionBlob = null;
+  document.getElementById("playOpinionButton").disabled = true;
+  statusUpdate("opinion", "✅ New question loaded. Press 🔊 Listen.");
+}
+
+function showOriginalOpinion() {
+  if (!currentOpinion) { statusUpdate("opinion", "⚠️ No question loaded yet."); return; }
+  document.getElementById("opinionPromptText").innerText = currentOpinion;
+}
+
+function playOpinion() {
+  if (!currentOpinion) { statusUpdate("opinion", "⚠️ No question loaded yet."); return; }
+  speakText(currentOpinion, "opinion");
+}
+
+async function startOpinionRecording() {
+  setRecordingState("opinion", true, "stopOpinionButton");
+  showRecordingStatus("opinion", 40);
+
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  mediaRecorderOpinion = new MediaRecorder(stream);
+  const chunks = [];
+  mediaRecorderOpinion.ondataavailable = e => chunks.push(e.data);
+  mediaRecorderOpinion.onstop = async () => {
+    stopCountdown("opinion");
+    setRecordingState("opinion", false, "stopOpinionButton");
+    statusUpdate("opinion", "⏹️ Recording stopped.", 1500);
+
+    recordedOpinionBlob = new Blob(chunks, { type: "audio/webm" });
+    document.getElementById("playOpinionButton").disabled = false;
+    document.getElementById("stopOpinionButton").disabled = true;
+
+    const text = await transcribeAudio(recordedOpinionBlob, "opinion");
+    document.getElementById("opinionUserResponse").value = text || "";
+    statusUpdate("opinion", "✅ Transcription complete. Now click ⭐ Rate My Work!");
+  };
+  mediaRecorderOpinion.start();
+  document.getElementById("stopOpinionButton").disabled = false;
+  opinionTimer = setTimeout(() => {
+    if (mediaRecorderOpinion.state !== "inactive") mediaRecorderOpinion.stop();
+  }, 40000);
+}
+
+function stopOpinionRecording() {
+  if (mediaRecorderOpinion && mediaRecorderOpinion.state === "recording") {
+    mediaRecorderOpinion.stop();
+    clearTimeout(opinionTimer);
+  }
+}
+
+function redoOpinion() {
+  document.getElementById("opinionUserResponse").value = "";
+  statusUpdate("opinion", "🔁 Answer cleared. Please try again.");
+}
+
+async function rateOpinion() {
+  const student = (document.getElementById("opinionUserResponse").value || "").trim();
+  if (!student) { statusUpdate("opinion", "⚠️ Please speak or type your answer first!"); return; }
+
+  statusUpdate("opinion", "🧠 Evaluating your opinion...");
+  const res = await fetch("/api/openai", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "gpt-3.5-turbo",
+      messages: [
+        { role: "system", content:
+`You are an English speaking evaluator.
+Respect the student's meaning; do not over-correct.
+Ignore punctuation and capitalization entirely.
+Score:
+5 clear/expanded, 4 clear but general, 3 understandable/vague,
+2 hard to connect ideas, 1 very simple/incomplete.
+Format:
+Corrected Opinion:
+[Show corrected student's opinion in natural spoken style]
+Score: X / 5
+Feedback: [warm, specific advice]
+Sample Full-Mark Answer:
+[~60–80 words, 3–5 short sentences, natural and speakable]` },
+        { role: "user", content: `Question: "${currentOpinion}"\nStudent's Opinion: "${student}"` }
+      ]
+    })
+  });
+  const data = await res.json();
+  const feedback = data?.choices?.[0]?.message?.content?.trim() || "❌ No feedback.";
+  const box = document.getElementById("opinionRatingBox");
+  box.innerHTML = `<strong>Result:</strong><br>${feedback}
+    <div style="margin-top:10px;font-size:12px;color:gray;">🌟 Tip: Expand ideas naturally; one personal example helps.</div>`;
+  box.style.display = "block";
+  statusUpdate("opinion", "✅ Evaluation complete.");
+}
+
+/* =========================================================
+   ON LOAD
+   ========================================================= */
+window.addEventListener("load", () => {
+  preloadQuestions();
+  preloadSentences();
+  loadNewStory();
+  prepareOpinion();
+});
+</script>
+</body>
+</html>
+
