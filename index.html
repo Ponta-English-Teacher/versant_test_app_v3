@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Versant Test Preparation (ver.3 + countdown)</title>
+  <title>Versant Test Preparation (ver.3 — iPhone-safe + prep countdown + early mic)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
@@ -172,7 +172,7 @@
     📋 <strong>Directions:</strong> You will hear three short phrases. Build a full, natural English sentence using all the ideas.
   </p>
   <p style="font-size: 16px; color: #555;">
-    ✅ <em>Example:</em> the dog → run → in the park → “The dog is running in the park.”
+    ✅ <em>Example:</em> the boy → plays → soccer after school → “The boy is playing soccer after school.”
   </p>
   <p id="sentencePromptText">[Phrases will appear here]</p>
   <textarea id="sentenceUserResponse" placeholder="Your full sentence will appear here..."></textarea>
@@ -224,7 +224,7 @@
 <div class="section" id="opinionSpeakingSection">
   <h2>💬 Versant Opinion Speaking Practice</h2>
   <p style="font-size: 16px; color: #555;">
-    📋 <strong>Directions:</strong> Listen to the question. Think briefly (~3s). Speak clearly for 20–30 seconds (max 40s).
+    📋 <strong>Directions:</strong> Listen to the question. Think briefly. Speak clearly for 20–30 seconds (max 40s).
   </p>
   <p id="opinionPromptText">[Press 🔊 Listen to hear the question]</p>
   <textarea id="opinionUserResponse" placeholder="Your answer will appear here..."></textarea>
@@ -273,16 +273,24 @@ async function speakText(text, where = "general") {
   }
 }
 
+// Auto-detect encoding from recorded blob (WEBM_OPUS vs LINEAR16 WAV)
 async function transcribeAudio(blob, where = "general") {
   try {
     statusUpdate(where, "📝 Transcribing...");
+
+    let encoding = "WEBM_OPUS";
+    const t = (blob.type || "").toLowerCase();
+    if (t.includes("wav")) encoding = "LINEAR16";
+    else if (t.includes("ogg")) encoding = "OGG_OPUS";
+    else if (t.includes("webm")) encoding = "WEBM_OPUS";
+
     const base64 = await blobToBase64(blob);
     const resp = await fetch("/api/stt", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         config: {
-          encoding: "WEBM_OPUS",
+          encoding,
           languageCode: "en-US",
           enableAutomaticPunctuation: true
         },
@@ -313,6 +321,18 @@ function statusUpdate(where, msg, timeout = 3000) {
   if (!el) return;
   el.innerHTML = msg;
   if (timeout > 0) setTimeout(() => { if (el.innerHTML === msg) el.innerHTML = ""; }, timeout);
+}
+function getStatusEl(where) {
+  const id = ({
+    reading: "status",
+    repeat: "repeatStatus",
+    question: "questionStatus",
+    sentence: "sentenceStatus",
+    story: "storyStatus",
+    opinion: "opinionStatus",
+    general: "status"
+  })[where] || "status";
+  return document.getElementById(id);
 }
 
 function blobToBase64(blob) {
@@ -358,14 +378,8 @@ function setRecordingState(where, isRecording, stopButtonId = null) {
   });
 }
 
-function showRecordingStatus(where, maxSec) {
-  // initialize countdown state
-  startCountdown(where, maxSec);
-}
-
 function startCountdown(where, totalSec) {
   const end = Date.now() + totalSec * 1000;
-  // clear any existing timer
   stopCountdown(where);
   countdownTimers[where] = {
     end,
@@ -385,32 +399,246 @@ function stopCountdown(where) {
   countdownTimers[where] = null;
 }
 
+function showRecordingStatus(where, maxSec) {
+  startCountdown(where, maxSec);
+}
+
+/* =========================================================
+   iPHONE-SAFE RECORDER (fallback to WAV on iOS Safari)
+   + EARLY MIC ACTIVATION DURING PRE-COUNTDOWN
+   ========================================================= */
+
+// iOS / iPadOS detection (covers iPadOS desktop UA)
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+// Prefer MediaRecorder off iOS; on iOS we force fallback due to Safari bugs
+function shouldUseMediaRecorder() {
+  const hasMR = typeof MediaRecorder !== "undefined";
+  if (!hasMR) return false;
+  if (isIOS()) return false; // force fallback on iOS
+  return true;
+}
+
+// WAV helpers (mono 16-bit)
+function floatTo16BitPCM(float32Array) {
+  const buffer = new ArrayBuffer(float32Array.length * 2);
+  const view = new DataView(buffer);
+  let offset = 0;
+  for (let i = 0; i < float32Array.length; i++, offset += 2) {
+    let s = Math.max(-1, Math.min(1, float32Array[i]));
+    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+  }
+  return buffer;
+}
+function writeWavHeader(sampleRate, numSamples) {
+  const blockAlign = 2, byteRate = sampleRate * blockAlign, dataSize = numSamples * blockAlign;
+  const buffer = new ArrayBuffer(44);
+  const view = new DataView(buffer);
+  view.setUint32(0, 0x46464952, false); // 'RIFF'
+  view.setUint32(4, 36 + dataSize, true);
+  view.setUint32(8, 0x45564157, false); // 'WAVE'
+  view.setUint32(12, 0x20746d66, false); // 'fmt '
+  view.setUint32(16, 16, true); // PCM chunk size
+  view.setUint16(20, 1, true); // PCM format
+  view.setUint16(22, 1, true); // mono
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, byteRate, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, 16, true); // bits per sample
+  view.setUint32(36, 0x61746164, false); // 'data'
+  view.setUint32(40, dataSize, true);
+  return buffer;
+}
+function encodeWavMono(samplesFloat32, sampleRate) {
+  const header = writeWavHeader(sampleRate, samplesFloat32.length);
+  const pcm = floatTo16BitPCM(samplesFloat32);
+  const wavBytes = new Uint8Array(header.byteLength + pcm.byteLength);
+  wavBytes.set(new Uint8Array(header), 0);
+  wavBytes.set(new Uint8Array(pcm), header.byteLength);
+  return new Blob([wavBytes], { type: "audio/wav" });
+}
+
+/**
+ * Prepare the recorder EARLY (during pre-countdown) so mic is warm.
+ * Returns { start, stop, blobPromise }.
+ */
+async function prepareRecorder(where, maxMs) {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const useMR = shouldUseMediaRecorder();
+
+  if (useMR) {
+    // Desktop: MediaRecorder prepared but not started yet
+    const rec = new MediaRecorder(stream);
+    const chunks = [];
+    let timeoutId = null;
+    let stopped = false;
+
+    rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+    const blobPromise = new Promise(resolve => {
+      rec.onstop = () => {
+        stream.getTracks().forEach(t => t.stop());
+        resolve(new Blob(chunks, { type: "audio/webm" }));
+      };
+    });
+
+    const start = () => {
+      if (stopped || rec.state !== "inactive") return;
+      rec.start();
+      timeoutId = setTimeout(() => { if (rec.state !== "inactive") rec.stop(); }, maxMs);
+    };
+    const stop = () => {
+      if (stopped) return;
+      stopped = true;
+      if (timeoutId) clearTimeout(timeoutId);
+      if (rec.state !== "inactive") rec.stop();
+    };
+
+    return { start, stop, blobPromise };
+  } else {
+    // iOS Safari WAV fallback: build graph now, collect only after start()
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    const ctx = new AudioCtx();
+    await ctx.resume();
+    const source = ctx.createMediaStreamSource(stream);
+    const bufferSize = 4096;
+    const processor = ctx.createScriptProcessor(bufferSize, 1, 1);
+
+    let collecting = false;
+    const chunks = [];
+    let timeoutId = null;
+    let stopped = false;
+
+    processor.onaudioprocess = (event) => {
+      if (!collecting) return;
+      const input = event.inputBuffer.getChannelData(0);
+      const copy = new Float32Array(input.length);
+      copy.set(input);
+      chunks.push(copy);
+    };
+
+    source.connect(processor);
+    processor.connect(ctx.destination);
+
+    function cleanup() {
+      try { processor.disconnect(); } catch {}
+      try { source.disconnect(); } catch {}
+      try { stream.getTracks().forEach(t => t.stop()); } catch {}
+      try { ctx.close(); } catch {}
+    }
+
+    function buildWav(sr) {
+      let total = 0;
+      for (const c of chunks) total += c.length;
+      const mono = new Float32Array(total);
+      let off = 0;
+      for (const c of chunks) { mono.set(c, off); off += c.length; }
+      return encodeWavMono(mono, sr);
+    }
+
+    let resolveBlob;
+    const blobPromise = new Promise(r => (resolveBlob = r));
+
+    const start = () => {
+      if (stopped) return;
+      collecting = true;
+      timeoutId = setTimeout(() => {
+        if (stopped) return;
+        stopped = true;
+        collecting = false;
+        cleanup();
+        resolveBlob(buildWav(ctx.sampleRate || 44100));
+      }, maxMs);
+    };
+    const stop = () => {
+      if (stopped) return;
+      stopped = true;
+      collecting = false;
+      if (timeoutId) clearTimeout(timeoutId);
+      cleanup();
+      resolveBlob(buildWav(ctx.sampleRate || 44100));
+    };
+
+    return { start, stop, blobPromise };
+  }
+}
+
+/**
+ * High-level unified recording with UI wiring:
+ *  - Pre-countdown (Versant-style) while mic warms up
+ *  - Start capture instantly at 0 (no lag)
+ *  - In-recording countdown & Stop support
+ */
+async function recordAudioUnified(where, maxMs, stopButtonId) {
+  // Versant-style prep seconds per task
+  let prepSeconds = 3;
+  if (where.includes("reading")) prepSeconds = 5;
+  else if (where.includes("repeat")) prepSeconds = 2;
+  else if (where.includes("question")) prepSeconds = 5;
+  else if (where.includes("sentence")) prepSeconds = 3;
+  else if (where.includes("story")) prepSeconds = 10;
+  else if (where.includes("opinion")) prepSeconds = 10;
+
+  const statusEl = getStatusEl(where);
+
+  // 1) Prepare mic & recorder EARLY (ask permission, warm hardware)
+  let ctrl;
+  try {
+    ctrl = await prepareRecorder(where, maxMs);
+  } catch {
+    statusUpdate(where, "❌ Microphone access error.");
+    throw new Error("Mic access failed");
+  }
+
+  // 2) Pre-countdown (mic already active, but not recording yet)
+  if (statusEl) {
+    for (let i = prepSeconds; i > 0; i--) {
+      statusEl.textContent = `Get ready... ${i}`;
+      await new Promise(r => setTimeout(r, 1000));
+    }
+    statusEl.textContent = "🎙 Start speaking!";
+    await new Promise(r => setTimeout(r, 300)); // tiny “beep” pause
+  }
+
+  // 3) Lock UI & show recording countdown, then START capture instantly
+  setRecordingState(where, true, stopButtonId || null);
+  showRecordingStatus(where, Math.ceil(maxMs/1000));
+  ctrl.start(); // start immediately (no warm-up lag)
+
+  // Wire manual stop if present
+  if (stopButtonId) {
+    const btn = document.getElementById(stopButtonId);
+    if (btn) btn.onclick = () => { try { ctrl.stop(); } catch {} };
+  }
+
+  // 4) Wait for completion
+  const blob = await ctrl.blobPromise;
+
+  // 5) Cleanup UI
+  stopCountdown(where);
+  setRecordingState(where, false, stopButtonId || null);
+  statusUpdate(where, "⏹️ Recording stopped.", 1500);
+  if (stopButtonId) {
+    const btn = document.getElementById(stopButtonId);
+    if (btn) btn.onclick = null;
+  }
+
+  return blob;
+}
+
 /* =========================================================
    SECTION 1: READING
    ========================================================= */
 let recordedReadingBlob = null;
 
 async function startReadingRecording() {
-  setRecordingState("reading", true);
-  showRecordingStatus("reading", 5);
-
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  const rec = new MediaRecorder(stream);
-  const chunks = [];
-  rec.ondataavailable = e => chunks.push(e.data);
-  rec.onstop = async () => {
-    stopCountdown("reading");
-    setRecordingState("reading", false);
-    statusUpdate("reading", "⏹️ Recording stopped.", 1500);
-
-    recordedReadingBlob = new Blob(chunks, { type: "audio/webm" });
-    document.getElementById("playRecordingButton").disabled = false;
-
-    const text = await transcribeAudio(recordedReadingBlob, "reading");
-    document.getElementById("userResponse").value = text || "";
-  };
-  rec.start();
-  setTimeout(() => rec.stop(), 5000);
+  const blob = await recordAudioUnified("reading", 5000);
+  recordedReadingBlob = blob;
+  document.getElementById("playRecordingButton").disabled = false;
+  const text = await transcribeAudio(blob, "reading");
+  document.getElementById("userResponse").value = text || "";
 }
 
 async function getNewReadingPrompt() {
@@ -530,24 +758,10 @@ function showOriginalRepeat() {
 }
 
 async function startRepeatRecording() {
-  setRecordingState("repeat", true);
-  showRecordingStatus("repeat", 4);
-
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  const rec = new MediaRecorder(stream);
-  const chunks = [];
-  rec.ondataavailable = e => chunks.push(e.data);
-  rec.onstop = async () => {
-    stopCountdown("repeat");
-    setRecordingState("repeat", false);
-    statusUpdate("repeat", "⏹️ Recording stopped.", 1500);
-
-    recordedRepeatBlob = new Blob(chunks, { type: "audio/webm" });
-    const text = await transcribeAudio(recordedRepeatBlob, "repeat");
-    document.getElementById("repeatUserResponse").value = text || "";
-  };
-  rec.start();
-  setTimeout(() => rec.stop(), 4000);
+  const blob = await recordAudioUnified("repeat", 4000);
+  recordedRepeatBlob = blob;
+  const text = await transcribeAudio(blob, "repeat");
+  document.getElementById("repeatUserResponse").value = text || "";
 }
 
 async function rateRepeat() {
@@ -629,24 +843,10 @@ function playQuestion() {
 }
 
 async function startQuestionRecording() {
-  setRecordingState("question", true);
-  showRecordingStatus("question", 8);
-
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  const rec = new MediaRecorder(stream);
-  const chunks = [];
-  rec.ondataavailable = e => chunks.push(e.data);
-  rec.onstop = async () => {
-    stopCountdown("question");
-    setRecordingState("question", false);
-    statusUpdate("question", "⏹️ Recording stopped.", 1500);
-
-    recordedAnswerBlob = new Blob(chunks, { type: "audio/webm" });
-    const text = await transcribeAudio(recordedAnswerBlob, "question");
-    document.getElementById("questionUserResponse").value = text || "";
-  };
-  rec.start();
-  setTimeout(() => rec.stop(), 8000);
+  const blob = await recordAudioUnified("question", 8000);
+  recordedAnswerBlob = blob;
+  const text = await transcribeAudio(blob, "question");
+  document.getElementById("questionUserResponse").value = text || "";
 }
 
 async function rateQuestion() {
@@ -733,24 +933,10 @@ function showSentencePhrases() {
 }
 
 async function startSentenceRecording() {
-  setRecordingState("sentence", true);
-  showRecordingStatus("sentence", 6);
-
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  const rec = new MediaRecorder(stream);
-  const chunks = [];
-  rec.ondataavailable = e => chunks.push(e.data);
-  rec.onstop = async () => {
-    stopCountdown("sentence");
-    setRecordingState("sentence", false);
-    statusUpdate("sentence", "⏹️ Recording stopped.", 1500);
-
-    recordedSentenceBlob = new Blob(chunks, { type: "audio/webm" });
-    const text = await transcribeAudio(recordedSentenceBlob, "sentence");
-    document.getElementById("sentenceUserResponse").value = text || "";
-  };
-  rec.start();
-  setTimeout(() => rec.stop(), 6000);
+  const blob = await recordAudioUnified("sentence", 6000);
+  recordedSentenceBlob = blob;
+  const text = await transcribeAudio(blob, "sentence");
+  document.getElementById("sentenceUserResponse").value = text || "";
 }
 
 async function rateSentence() {
@@ -802,8 +988,6 @@ const storyList = [
 ];
 let currentStory = "";
 let recordedStoryBlob = null;
-let mediaRecorderStory = null;
-let storyTimer = null;
 
 function loadNewStory() {
   if (!storyList.length) { statusUpdate("story", "⚠️ No stories."); return; }
@@ -830,38 +1014,20 @@ function playStory() {
 }
 
 async function startStoryRecording() {
-  setRecordingState("story", true, "stopStoryButton");
-  showRecordingStatus("story", 30);
-
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  mediaRecorderStory = new MediaRecorder(stream);
-  const chunks = [];
-  mediaRecorderStory.ondataavailable = e => chunks.push(e.data);
-  mediaRecorderStory.onstop = async () => {
-    stopCountdown("story");
-    setRecordingState("story", false, "stopStoryButton");
-    statusUpdate("story", "⏹️ Recording stopped.", 1500);
-
-    recordedStoryBlob = new Blob(chunks, { type: "audio/webm" });
-    document.getElementById("playStoryButton").disabled = false;
-    document.getElementById("stopStoryButton").disabled = true;
-
-    const text = await transcribeAudio(recordedStoryBlob, "story");
-    document.getElementById("storyUserResponse").value = text || "";
-    statusUpdate("story", "✅ Transcribed! Now click ⭐ Rate My Work!");
-  };
-  mediaRecorderStory.start();
-  storyTimer = setTimeout(() => {
-    if (mediaRecorderStory.state !== "inactive") mediaRecorderStory.stop();
-  }, 30000);
   document.getElementById("stopStoryButton").disabled = false;
+  const blob = await recordAudioUnified("story", 30000, "stopStoryButton");
+  recordedStoryBlob = blob;
+  document.getElementById("playStoryButton").disabled = false;
+  document.getElementById("stopStoryButton").disabled = true;
+  const text = await transcribeAudio(blob, "story");
+  document.getElementById("storyUserResponse").value = text || "";
+  statusUpdate("story", "✅ Transcribed! Now click ⭐ Rate My Work!");
 }
 
 function stopStoryRecording() {
-  if (mediaRecorderStory && mediaRecorderStory.state === "recording") {
-    mediaRecorderStory.stop();
-    clearTimeout(storyTimer);
-  }
+  // stop is wired inside recordAudioUnified via button onclick; we show feedback here
+  stopCountdown("story");
+  statusUpdate("story", "⏹️ Stopping...", 1000);
 }
 
 async function rateStory() {
@@ -909,8 +1075,6 @@ const opinionQuestions = [
 let currentOpinionIndex = 0;
 let currentOpinion = opinionQuestions[0];
 let recordedOpinionBlob = null;
-let mediaRecorderOpinion = null;
-let opinionTimer = null;
 
 function prepareOpinion() {
   currentOpinionIndex = 0;
@@ -943,38 +1107,19 @@ function playOpinion() {
 }
 
 async function startOpinionRecording() {
-  setRecordingState("opinion", true, "stopOpinionButton");
-  showRecordingStatus("opinion", 40);
-
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  mediaRecorderOpinion = new MediaRecorder(stream);
-  const chunks = [];
-  mediaRecorderOpinion.ondataavailable = e => chunks.push(e.data);
-  mediaRecorderOpinion.onstop = async () => {
-    stopCountdown("opinion");
-    setRecordingState("opinion", false, "stopOpinionButton");
-    statusUpdate("opinion", "⏹️ Recording stopped.", 1500);
-
-    recordedOpinionBlob = new Blob(chunks, { type: "audio/webm" });
-    document.getElementById("playOpinionButton").disabled = false;
-    document.getElementById("stopOpinionButton").disabled = true;
-
-    const text = await transcribeAudio(recordedOpinionBlob, "opinion");
-    document.getElementById("opinionUserResponse").value = text || "";
-    statusUpdate("opinion", "✅ Transcription complete. Now click ⭐ Rate My Work!");
-  };
-  mediaRecorderOpinion.start();
   document.getElementById("stopOpinionButton").disabled = false;
-  opinionTimer = setTimeout(() => {
-    if (mediaRecorderOpinion.state !== "inactive") mediaRecorderOpinion.stop();
-  }, 40000);
+  const blob = await recordAudioUnified("opinion", 40000, "stopOpinionButton");
+  recordedOpinionBlob = blob;
+  document.getElementById("playOpinionButton").disabled = false;
+  document.getElementById("stopOpinionButton").disabled = true;
+  const text = await transcribeAudio(blob, "opinion");
+  document.getElementById("opinionUserResponse").value = text || "";
+  statusUpdate("opinion", "✅ Transcription complete. Now click ⭐ Rate My Work!");
 }
 
 function stopOpinionRecording() {
-  if (mediaRecorderOpinion && mediaRecorderOpinion.state === "recording") {
-    mediaRecorderOpinion.stop();
-    clearTimeout(opinionTimer);
-  }
+  stopCountdown("opinion");
+  statusUpdate("opinion", "⏹️ Stopping...", 1000);
 }
 
 function redoOpinion() {
@@ -1032,4 +1177,3 @@ window.addEventListener("load", () => {
 </script>
 </body>
 </html>
-
