@@ -430,10 +430,7 @@ function isIOS() {
 
 // Prefer MediaRecorder off iOS; on iOS we force fallback due to Safari bugs
 function shouldUseMediaRecorder() {
-  const hasMR = typeof MediaRecorder !== "undefined";
-  if (!hasMR) return false;
-  if (isIOS()) return false; // force fallback on iOS
-  return true;
+  return false;
 }
 
 // WAV helpers (mono 16-bit)
