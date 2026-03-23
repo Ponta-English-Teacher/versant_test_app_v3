@@ -575,12 +575,23 @@ function buildWav(sr) {
     off += c.length;
   }
 
+  // 🔥 Normalize volume (critical fix)
+  let max = 0;
+  for (let i = 0; i < mono.length; i++) {
+    if (Math.abs(mono[i]) > max) max = Math.abs(mono[i]);
+  }
+
+  if (max > 0) {
+    for (let i = 0; i < mono.length; i++) {
+      mono[i] = mono[i] / max;
+    }
+  }
+
   const targetSampleRate = 16000;
   const resampled = resampleFloat32(mono, sr, targetSampleRate);
 
   return encodeWavMono(resampled, targetSampleRate);
 }
-
     let resolveBlob;
     const blobPromise = new Promise(r => (resolveBlob = r));
 
