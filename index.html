@@ -463,6 +463,25 @@ function writeWavHeader(sampleRate, numSamples) {
   view.setUint32(40, dataSize, true);
   return buffer;
 }
+
+function resampleFloat32(input, inSampleRate, outSampleRate) {
+  if (inSampleRate === outSampleRate) return input;
+
+  const ratio = inSampleRate / outSampleRate;
+  const newLength = Math.round(input.length / ratio);
+  const output = new Float32Array(newLength);
+
+  for (let i = 0; i < newLength; i++) {
+    const index = i * ratio;
+    const indexFloor = Math.floor(index);
+    const indexCeil = Math.min(indexFloor + 1, input.length - 1);
+    const frac = index - indexFloor;
+    output[i] = input[indexFloor] * (1 - frac) + input[indexCeil] * frac;
+  }
+
+  return output;
+}
+
 function encodeWavMono(samplesFloat32, sampleRate) {
   const header = writeWavHeader(sampleRate, samplesFloat32.length);
   const pcm = floatTo16BitPCM(samplesFloat32);
@@ -540,14 +559,22 @@ async function prepareRecorder(where, maxMs) {
       try { ctx.close(); } catch {}
     }
 
-    function buildWav(sr) {
-      let total = 0;
-      for (const c of chunks) total += c.length;
-      const mono = new Float32Array(total);
-      let off = 0;
-      for (const c of chunks) { mono.set(c, off); off += c.length; }
-      return encodeWavMono(mono, sr);
-    }
+function buildWav(sr) {
+  let total = 0;
+  for (const c of chunks) total += c.length;
+
+  const mono = new Float32Array(total);
+  let off = 0;
+  for (const c of chunks) {
+    mono.set(c, off);
+    off += c.length;
+  }
+
+  const targetSampleRate = 16000;
+  const resampled = resampleFloat32(mono, sr, targetSampleRate);
+
+  return encodeWavMono(resampled, targetSampleRate);
+}
 
     let resolveBlob;
     const blobPromise = new Promise(r => (resolveBlob = r));
