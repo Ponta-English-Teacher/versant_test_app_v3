@@ -278,30 +278,44 @@ async function transcribeAudio(blob, where = "general") {
   try {
     statusUpdate(where, "📝 Transcribing...");
 
-    let encoding = "WEBM_OPUS";
-    const t = (blob.type || "").toLowerCase();
-    if (t.includes("wav")) encoding = "LINEAR16";
-    else if (t.includes("ogg")) encoding = "OGG_OPUS";
-    else if (t.includes("webm")) encoding = "WEBM_OPUS";
-
     const base64 = await blobToBase64(blob);
+
     const resp = await fetch("/api/stt", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify({
-        config: {
-          encoding,
-          languageCode: "en-US",
-          enableAutomaticPunctuation: true
-        },
-        audio: { content: base64.split(",")[1] }
+        audioBase64: base64.split(",")[1]
       })
     });
-    const data = await resp.json();
-    const transcript = data?.results?.[0]?.alternatives?.[0]?.transcript || "(No speech detected)";
+
+    const raw = await resp.text();
+    console.log("STT RAW:", raw);
+
+    if (!resp.ok) {
+      statusUpdate(where, `❌ STT error (${resp.status})`);
+      return "";
+    }
+
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      statusUpdate(where, "❌ Invalid JSON from STT");
+      return "";
+    }
+
+    const transcript =
+      data.DisplayText ||
+      data.NBest?.[0]?.Display ||
+      "(No speech detected)";
+
     statusUpdate(where, "✅ Transcribed!");
     return transcript;
+
   } catch (e) {
+    console.error("STT ERROR:", e);
     statusUpdate(where, "❌ STT error.");
     return "";
   }
