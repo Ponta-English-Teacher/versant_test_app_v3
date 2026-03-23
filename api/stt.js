@@ -1,6 +1,6 @@
 module.exports = async (req, res) => {
   try {
-    const { audioBase64 } = req.body;
+    const { audioBase64 } = req.body || {};
 
     if (!audioBase64) {
       return res.status(400).json({ error: "missing_audioBase64" });
@@ -10,19 +10,19 @@ module.exports = async (req, res) => {
 
     const endpoint =
       `https://${process.env.AZURE_SPEECH_REGION}.stt.speech.microsoft.com` +
-      `/speech/recognition/conversation/cognitiveservices/v1?language=en-US`;
+      `/speech/recognition/conversation/cognitiveservices/v1?language=en-US&format=detailed`;
 
     const resp = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Ocp-Apim-Subscription-Key": process.env.AZURE_SPEECH_KEY,
-        "Content-Type": "audio/wav"
+        "Accept": "application/json;text/xml",
+        "Content-Type": "audio/wav; codecs=audio/pcm; samplerate=16000"
       },
       body: audioBuffer
     });
 
     const raw = await resp.text();
-
     console.log("AZURE STT STATUS:", resp.status);
     console.log("AZURE STT RAW:", raw);
 
@@ -37,7 +37,6 @@ module.exports = async (req, res) => {
     }
 
     return res.status(resp.status).json(data);
-
   } catch (err) {
     return res.status(500).json({
       error: "azure_stt_error",

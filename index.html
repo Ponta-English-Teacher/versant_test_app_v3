@@ -273,7 +273,7 @@ async function speakText(text, where = "general") {
   }
 }
 
-// Auto-detect encoding from recorded blob (WEBM_OPUS vs LINEAR16 WAV)
+// Azure STT helper
 async function transcribeAudio(blob, where = "general") {
   try {
     statusUpdate(where, "📝 Transcribing...");
@@ -293,31 +293,36 @@ async function transcribeAudio(blob, where = "general") {
     const raw = await resp.text();
     console.log("STT RAW:", raw);
 
-    if (!resp.ok) {
-      statusUpdate(where, `❌ STT error (${resp.status})`);
-      return "";
-    }
-
     let data;
     try {
       data = JSON.parse(raw);
     } catch {
-      statusUpdate(where, "❌ Invalid JSON from STT");
-      return "";
+      statusUpdate(where, "❌ STT returned non-JSON response.");
+      return "STT NON-JSON RESPONSE";
     }
 
-    const transcript =
-      data.DisplayText ||
-      data.NBest?.[0]?.Display ||
-      "(No speech detected)";
+    if (!resp.ok) {
+      statusUpdate(where, `❌ STT error (${resp.status})`);
+      return `STT ERROR: ${data.error || raw}`;
+    }
 
-    statusUpdate(where, "✅ Transcribed!");
-    return transcript;
+    if (data.DisplayText) {
+      statusUpdate(where, "✅ Transcribed!");
+      return data.DisplayText;
+    }
+
+    if (data.NBest && data.NBest[0] && data.NBest[0].Display) {
+      statusUpdate(where, "✅ Transcribed!");
+      return data.NBest[0].Display;
+    }
+
+    statusUpdate(where, "⚠️ No transcript returned.");
+    return `STT RESPONSE: ${raw}`;
 
   } catch (e) {
     console.error("STT ERROR:", e);
     statusUpdate(where, "❌ STT error.");
-    return "";
+    return "STT FRONTEND ERROR";
   }
 }
 
