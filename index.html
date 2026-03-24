@@ -278,7 +278,12 @@ async function transcribeAudio(blob, where = "general") {
   try {
     statusUpdate(where, "📝 Transcribing...");
 
+    console.log("[transcribeAudio] blob size=", blob.size, "type=", blob.type);
+
     const base64 = await blobToBase64(blob);
+    const audioBase64 = base64.split(",")[1];
+
+    console.log("[transcribeAudio] base64 length=", audioBase64.length, "estimatedBytes=", Math.round(audioBase64.length * 0.75));
 
     const resp = await fetch("/api/stt", {
       method: "POST",
@@ -286,7 +291,7 @@ async function transcribeAudio(blob, where = "general") {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        audioBase64: base64.split(",")[1]
+        audioBase64: audioBase64
       })
     });
 
@@ -364,12 +369,24 @@ function blobToBase64(blob) {
 }
 
 function playBlob(blob) {
-  if (!blob) {
+  if (!lastPlaybackBuffer || !lastPlaybackBuffer.samples) {
     alert("No recording available yet!");
     return;
   }
-  const audio = new Audio(URL.createObjectURL(blob));
-  audio.play();
+
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const buffer = audioCtx.createBuffer(1, lastPlaybackBuffer.samples.length, lastPlaybackBuffer.sampleRate);
+    buffer.copyToChannel(lastPlaybackBuffer.samples, 0);
+
+    const source = audioCtx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioCtx.destination);
+    source.start(0);
+  } catch (err) {
+    console.error("playBlob error:", err);
+    alert("Playback failed.");
+  }
 }
 
 /* =========================================================
@@ -470,6 +487,8 @@ function writeWavHeader(sampleRate, numSamples) {
 }
 
 function resampleFloat32(input, inSampleRate, outSampleRate) {
+  console.log("[resample] inSampleRate=", inSampleRate, "outSampleRate=", outSampleRate, "inputLength=", input.length);
+
   if (inSampleRate === outSampleRate) return input;
 
   const ratio = inSampleRate / outSampleRate;
@@ -484,9 +503,10 @@ function resampleFloat32(input, inSampleRate, outSampleRate) {
     output[i] = input[indexFloor] * (1 - frac) + input[indexCeil] * frac;
   }
 
+  console.log("[resample] outputLength=", output.length);
   return output;
 }
-
+let lastPlaybackBuffer = null;
 function encodeWavMono(samplesFloat32, sampleRate) {
   const header = writeWavHeader(sampleRate, samplesFloat32.length);
   const pcm = floatTo16BitPCM(samplesFloat32);
@@ -568,6 +588,8 @@ function buildWav(sr) {
   let total = 0;
   for (const c of chunks) total += c.length;
 
+  console.log("[buildWav] chunks=", chunks.length, "totalSamples=", total, "sr=", sr);
+
   const mono = new Float32Array(total);
   let off = 0;
   for (const c of chunks) {
@@ -575,20 +597,30 @@ function buildWav(sr) {
     off += c.length;
   }
 
-  // 🔥 Normalize volume (critical fix)
   let max = 0;
   for (let i = 0; i < mono.length; i++) {
     if (Math.abs(mono[i]) > max) max = Math.abs(mono[i]);
   }
+  console.log("[buildWav] peakBeforeNorm=", max);
 
-  if (max > 0) {
+  if (max > 0.01) {
     for (let i = 0; i < mono.length; i++) {
       mono[i] = mono[i] / max;
     }
+    console.log("[buildWav] normalization applied");
+  } else {
+    console.warn("[buildWav] peak too low, normalization skipped");
   }
 
   const targetSampleRate = 16000;
   const resampled = resampleFloat32(mono, sr, targetSampleRate);
+
+  lastPlaybackBuffer = {
+    samples: resampled,
+    sampleRate: targetSampleRate
+  };
+
+  console.log("[buildWav] finalSamples=", resampled.length, "targetSR=", targetSampleRate);
 
   return encodeWavMono(resampled, targetSampleRate);
 }
@@ -603,7 +635,9 @@ function buildWav(sr) {
         stopped = true;
         collecting = false;
         cleanup();
-        resolveBlob(buildWav(ctx.sampleRate || 44100));
+        const actualSR = ctx.sampleRate;
+        console.log("[timeout] AudioContext.sampleRate=", actualSR, "chunks=", chunks.length);
+        resolveBlob(buildWav(actualSR || 44100));
       }, maxMs);
     };
     const stop = () => {
@@ -612,7 +646,9 @@ function buildWav(sr) {
       collecting = false;
       if (timeoutId) clearTimeout(timeoutId);
       cleanup();
-      resolveBlob(buildWav(ctx.sampleRate || 44100));
+      const actualSR = ctx.sampleRate;
+      console.log("[stop] AudioContext.sampleRate=", actualSR, "chunks=", chunks.length);
+      resolveBlob(buildWav(actualSR || 44100));
     };
 
     return { start, stop, blobPromise };

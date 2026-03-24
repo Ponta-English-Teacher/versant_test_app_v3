@@ -12,11 +12,17 @@ module.exports = async (req, res) => {
       `https://${process.env.AZURE_SPEECH_REGION}.stt.speech.microsoft.com` +
       `/speech/recognition/conversation/cognitiveservices/v1?language=en-US&format=detailed`;
 
+    console.log("AUDIO BUFFER BYTES:", audioBuffer.length);
+    console.log(
+      "AUDIO BUFFER FIRST 4 BYTES:",
+      audioBuffer[0], audioBuffer[1], audioBuffer[2], audioBuffer[3]
+    );
+
     const resp = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Ocp-Apim-Subscription-Key": process.env.AZURE_SPEECH_KEY,
-        "Accept": "application/json;text/xml",
+        "Accept": "application/json",
         "Content-Type": "audio/wav; codecs=audio/pcm; samplerate=16000"
       },
       body: audioBuffer
