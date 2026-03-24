@@ -2,193 +2,93 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Versant Test Prep</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Versant Test Preparation (ver.3 — iPhone-safe + prep countdown + early mic)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-  font-family: Arial, sans-serif;
-  background: #f0f2f5;
-  min-height: 100vh;
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-    /* ─── TAB BAR ─── */
-    #tab-bar {
-      position: sticky;
-      top: 0;
-      z-index: 200;
-      background: #1a1a2e;
-      display: flex;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
-      padding: 0 4px;
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 30px;
+      max-width: 800px;
+      margin: auto;
     }
-    #tab-bar::-webkit-scrollbar { display: none; }
-
-    .tab-btn {
-      flex: 0 0 auto;
-      padding: 13px 16px;
-      border: none;
-      background: transparent;
-      color: #8899bb;
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 0.03em;
-      cursor: pointer;
-      white-space: nowrap;
-      border-bottom: 3px solid transparent;
-      transition: color 0.18s, border-color 0.18s, background 0.18s;
-      border-radius: 0;
-      min-width: unset;
-    }
-    .tab-btn:hover { color: #dde4f0; background: rgba(255,255,255,0.05); }
-    .tab-btn.active { color: #ffffff; border-bottom-color: #4285F4; }
-
-    /* ─── PAGE CONTENT ─── */
-    #page-content {
-      max-width: 680px;
-      margin: 0 auto;
-      padding: 16px 14px 48px;
-    }
-
-    /* ─── SECTIONS ─── */
     .section {
-      display: none;
       background: #fff;
-      padding: 18px 16px 20px;
-      border-radius: 12px;
-      box-shadow: 0 1px 6px rgba(0,0,0,0.09);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
     }
-    .section.active-section { display: block; }
-
-    .section h2 {
-      font-size: 17px;
-      margin-bottom: 10px;
-      color: #222;
-    }
-    .section p {
-      font-size: 14px;
-      color: #555;
-      line-height: 1.5;
-      margin-bottom: 4px;
-    }
-    .section > p[id] {
-      font-size: 15px;
-      color: #222;
-      font-weight: 600;
-      margin: 10px 0 2px;
-      line-height: 1.5;
-    }
-
-    /* ─── TEXTAREA ─── */
     textarea {
       width: 100%;
-      height: 88px;
-      font-size: 15px;
-      padding: 9px 10px;
-      margin-top: 8px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      resize: vertical;
-      background: #fafafa;
-      color: #222;
+      height: 100px;
+      font-size: 16px;
+      padding: 10px;
+      margin-top: 10px;
     }
-    textarea:focus { outline: 2px solid #4285F4; border-color: transparent; }
-
-    /* ─── BUTTONS ─── */
     .button-group, .button-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 7px;
+      gap: 10px;
       margin-top: 10px;
     }
     button {
-      padding: 9px 11px;
+      padding: 10px 15px;
       border: none;
-      border-radius: 7px;
-      font-size: 13px;
-      font-weight: 600;
+      border-radius: 6px;
+      font-size: 16px;
       cursor: pointer;
       color: white;
-      min-width: 0;
-      flex: 1 1 auto;
-      transition: opacity 0.15s, filter 0.15s;
-      white-space: nowrap;
+      min-width: 100px;
+      flex: 1;
     }
-    button:disabled { opacity: 0.45; cursor: not-allowed; }
-    button:not(:disabled):active { filter: brightness(0.88); }
-
-    .green  { background-color: #34A853; }
+    .green { background-color: #34A853; }
     .purple { background-color: #9C27B0; }
-    .orange { background-color: #f90; color: #111; }
-    .gray   { background-color: #b0b8c4; color: #111; }
-    .blue   { background-color: #4285F4; }
-    .dark   { background-color: #3a3a3a; }
+    .orange { background-color: #f90; color: black; }
+    .gray { background-color: #ccc; color: black; }
+    .blue { background-color: #4285F4; }
+    .dark { background-color: #333; }
 
-    /* ─── STATUS LINES ─── */
-    #status, #repeatStatus, #questionStatus,
-    #sentenceStatus, #storyStatus, #opinionStatus {
-      margin-top: 10px;
-      font-weight: 700;
-      font-size: 13px;
-      color: #333;
-      min-height: 1.3em;
+    #status, #repeatStatus, #questionStatus, #sentenceStatus, #storyStatus, #opinionStatus {
+      margin-top: 15px;
+      font-weight: bold;
+      color: #444;
+      min-height: 1.2em;
     }
 
-    /* ─── FEEDBACK BOXES ─── */
-    #hintBox,
-    #ratingBox, #repeatRatingBox, #questionRatingBox,
-    #sentenceRatingBox, #storyRatingBox, #opinionRatingBox {
-      margin-top: 12px;
-      padding: 11px 12px;
+    #hintBox, #ratingBox, #repeatRatingBox, #questionRatingBox, #sentenceRatingBox, #storyRatingBox, #opinionRatingBox {
+      margin-top: 15px;
+      padding: 10px;
       display: none;
-      border-radius: 7px;
-      font-size: 13px;
-      line-height: 1.6;
     }
     #hintBox { background: #f0f8ff; border-left: 4px solid #9C27B0; }
-    #ratingBox, #repeatRatingBox, #questionRatingBox,
-    #sentenceRatingBox, #storyRatingBox, #opinionRatingBox {
-      background: #fff8ee; border-left: 4px solid #f90;
+    #ratingBox, #repeatRatingBox, #questionRatingBox, #sentenceRatingBox, #storyRatingBox, #opinionRatingBox {
+      background: #fff3e0; border-left: 4px solid #f90;
     }
 
-    /* ─── RECORDING INDICATOR ─── */
+    /* recording indicator */
     .blink { animation: blink 1s steps(2, start) infinite; }
     @keyframes blink { to { visibility: hidden; } }
 
+    /* countdown number styling */
     .cd {
       font-variant-numeric: tabular-nums;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }
   </style>
 </head>
 <body>
 
-<!-- ─── TAB NAVIGATION ─── -->
-<nav id="tab-bar">
-  <button class="tab-btn active"  onclick="switchTab('readingSection', this)">P1 Read</button>
-  <button class="tab-btn"         onclick="switchTab('repeatSection', this)">P2 Repeat</button>
-  <button class="tab-btn"         onclick="switchTab('questionSection', this)">P3 Answer</button>
-  <button class="tab-btn"         onclick="switchTab('sentenceBuildSection', this)">P4 Rebuild</button>
-  <button class="tab-btn"         onclick="switchTab('storyRetellSection', this)">P5 Retell</button>
-  <button class="tab-btn"         onclick="switchTab('opinionSpeakingSection', this)">P6 Opinion</button>
-</nav>
-
-<div id="page-content">
-
 <!-- ========================= -->
 <!-- Section 1: Reading Aloud -->
 <!-- ========================= -->
-<div class="section active-section" id="readingSection">
-  <h2>Part 1: Read Aloud</h2>
-  <p style="font-size:13px;color:#e07000;margin-bottom:6px;">何度も音読し、制限時間内にスムーズに読めるように練習しましょう。</p>
-  <p>📋 <strong>Directions:</strong> Listen carefully and read the sentence aloud.<br>
+<div class="section" id="readingSection">
+  <h2>📖 Versant Reading Practice</h2>
+  <p style="font-size: 16px; color: #555;">
+    📋 <strong>Directions:</strong> Listen carefully and read the sentence aloud.<br>
     Focus on natural pronunciation, rhythm, and fluency.<br>
-    Minor mistakes in punctuation and capitalization are not important.</p>
+    Minor mistakes in punctuation and capitalization are not important.
+  </p>
   <p id="promptText">The museum will close early today due to a private event.</p>
   <textarea id="userResponse" placeholder="Your spoken or typed response appears here..."></textarea>
 
@@ -211,21 +111,22 @@
 <!-- Section 2: Repeat -->
 <!-- ========================= -->
 <div class="section" id="repeatSection">
-  <h2>Part 2: Listen & Repeat</h2>
-  <p style="font-size:13px;color:#e07000;margin-bottom:6px;">聞いた内容をそのまま再現する練習です。意味を理解しながら正確に繰り返しましょう。</p>
-  <p>📋 <strong>Directions:</strong> Listen carefully and repeat exactly what you hear.<br>
+  <h2>🎤 Versant Repeat Sentences Practice</h2>
+  <p style="font-size: 16px; color: #555;">
+    📋 <strong>Directions:</strong> Listen carefully and repeat exactly what you hear.<br>
     Focus on copying the words, word order, and meaning.<br>
-    Minor differences in punctuation and capitalization are not important.</p>
+    Minor differences in punctuation and capitalization are not important.
+  </p>
   <p id="repeatPromptText">[Prompt will appear here]</p>
   <textarea id="repeatUserResponse" placeholder="Your repeated sentence will appear here..."></textarea>
 
   <div class="button-group">
-    <button class="green"  onclick="ensureRepeatPromptAndPlay()">🔊 Listen</button>
+    <button class="green" onclick="ensureRepeatPromptAndPlay()">🔊 Listen</button>
     <button class="orange" onclick="startRepeatRecording()">🎙️ Repeat Now</button>
-    <button class="gray"   onclick="playBlob(recordedRepeatBlob)">▶️ Play My Recording</button>
+    <button class="gray" onclick="playBlob(recordedRepeatBlob)">▶️ Play My Recording</button>
     <button class="purple" onclick="showOriginalRepeat()">📖 Show Sentence</button>
-    <button class="blue"   onclick="rateRepeat()">⭐ Rate My Work</button>
-    <button class="dark"   onclick="getNewRepeatPrompt()">🔄 Another</button>
+    <button class="blue" onclick="rateRepeat()">⭐ Rate My Work</button>
+    <button class="dark" onclick="getNewRepeatPrompt()">🔄 Another</button>
   </div>
 
   <div id="repeatStatus"></div>
@@ -236,25 +137,26 @@
 <!-- Section 3: Questions -->
 <!-- ========================= -->
 <div class="section" id="questionSection">
-  <h2>Part 3: Short Questions</h2>
-  <p style="font-size:13px;color:#e07000;margin-bottom:6px;">短く自然に答える練習です。完璧な文法よりも、伝わることを意識しましょう。</p>
-  <p>📋 <strong>Directions:</strong> Listen carefully to the question.<br>
+  <h2>🎤 Versant Questions Practice</h2>
+  <p style="font-size: 16px; color: #555;">
+    📋 <strong>Directions:</strong> Listen carefully to the question.<br>
     Answer with a short, natural response. Complex grammar is not required.<br>
-    Punctuation and capitalization are not important.</p>
-  <p style="font-size:13px;color:#777;margin-top:4px;">
-    <em>Example:</em> "Where do you live?" → "In Tokyo." / "I live in Tokyo."
+    Punctuation and capitalization are not important.
+  </p>
+  <p style="font-size: 16px; color: #555;">
+    <em>Example:</em> Question: "Where do you live?" → Good Answer: "In Tokyo." / "I live in Tokyo."
   </p>
   <p id="questionPromptText">[Press 🔊 Listen to hear the question]</p>
   <textarea id="questionUserResponse" placeholder="Your answer will appear here..."></textarea>
 
   <div class="button-group">
-    <button class="green"  onclick="playQuestion()">🔊 Listen</button>
+    <button class="green" onclick="playQuestion()">🔊 Listen</button>
     <button class="orange" onclick="startQuestionRecording()">🎙️ Answer Now</button>
-    <button class="gray"   onclick="document.getElementById('questionUserResponse').focus()">✍️ Type Answer</button>
-    <button class="gray"   onclick="playBlob(recordedAnswerBlob)">▶️ Play My Work</button>
+    <button class="gray" onclick="document.getElementById('questionUserResponse').focus()">✍️ Type Answer</button>
+    <button class="gray" onclick="playBlob(recordedAnswerBlob)">▶️ Play My Work</button>
     <button class="purple" onclick="showOriginalQuestion()">📖 View Question</button>
-    <button class="blue"   onclick="rateQuestion()">⭐ Rate My Work</button>
-    <button class="dark"   onclick="loadAnotherQuestion()">🔄 Another Question</button>
+    <button class="blue" onclick="rateQuestion()">⭐ Rate My Work</button>
+    <button class="dark" onclick="loadAnotherQuestion()">🔄 Another Question</button>
   </div>
 
   <div id="questionStatus"></div>
@@ -265,23 +167,24 @@
 <!-- Section 4: Sentence Build -->
 <!-- ========================= -->
 <div class="section" id="sentenceBuildSection">
-  <h2>Part 4: Sentence Rebuild</h2>
-  <p style="font-size:13px;color:#e07000;margin-bottom:6px;">与えられた語句を使って正しい文を作る練習です。語順と文法に注意しましょう。</p>
-  <p>📋 <strong>Directions:</strong> You will hear three short phrases in a mixed order. Rearrange them and say one natural sentence.</p>
-<p style="font-size:13px;color:#777;margin-top:4px;">
-  <em>Example:</em> after school → the boy → plays soccer → "The boy plays soccer after school."
-</p>
+  <h2>🛠️ Versant Sentence Build Practice</h2>
+  <p style="font-size: 16px; color: #555;">
+    📋 <strong>Directions:</strong> You will hear three short phrases. Build a full, natural English sentence using all the ideas.
+  </p>
+  <p style="font-size: 16px; color: #555;">
+    ✅ <em>Example:</em> the boy → plays → soccer after school → “The boy is playing soccer after school.”
+  </p>
   <p id="sentencePromptText">[Phrases will appear here]</p>
   <textarea id="sentenceUserResponse" placeholder="Your full sentence will appear here..."></textarea>
 
   <div class="button-group">
-    <button class="green"  onclick="playSentencePhrases()">🔊 Listen</button>
+    <button class="green" onclick="playSentencePhrases()">🔊 Listen</button>
     <button class="orange" onclick="startSentenceRecording()">🎙️ Speak Now</button>
-    <button class="gray"   onclick="document.getElementById('sentenceUserResponse').focus()">✍️ Type Answer</button>
-    <button class="gray"   onclick="playBlob(recordedSentenceBlob)">▶️ Play My Work</button>
+    <button class="gray" onclick="document.getElementById('sentenceUserResponse').focus()">✍️ Type Answer</button>
+    <button class="gray" onclick="playBlob(recordedSentenceBlob)">▶️ Play My Work</button>
     <button class="purple" onclick="showSentencePhrases()">📖 Show Phrases</button>
-    <button class="blue"   onclick="rateSentence()">⭐ Rate My Work</button>
-    <button class="dark"   onclick="loadAnotherSentence()">🔄 Another Set</button>
+    <button class="blue" onclick="rateSentence()">⭐ Rate My Work</button>
+    <button class="dark" onclick="loadAnotherSentence()">🔄 Another Set</button>
   </div>
 
   <div id="sentenceStatus"></div>
@@ -292,22 +195,23 @@
 <!-- Section 5: Story Retelling -->
 <!-- ========================= -->
 <div class="section" id="storyRetellSection">
-  <h2>Part 5: Story Retell</h2>
-  <p style="font-size:13px;color:#e07000;margin-bottom:6px;">話の内容を自分の言葉でまとめましょう。すべてを完璧に再現する必要はありません。</p>
-  <p>📋 <strong>Directions:</strong> Listen once. Retell the story in your own words (30s).<br>
-    ⭐ After speaking, click "Rate My Work" for feedback.</p>
+  <h2>📖 Versant Story Retelling Practice</h2>
+  <p style="font-size: 16px; color: #555;">
+    📋 <strong>Directions:</strong> Listen once. Retell the story in your own words (30s).<br>
+    ⭐ After speaking, click "Rate My Work" for feedback.
+  </p>
   <p id="storyPromptText">[Press 🔊 Listen to hear the story]</p>
   <textarea id="storyUserResponse" placeholder="Your retelling will appear here..."></textarea>
 
   <div class="button-group">
-    <button class="green"  onclick="playStory()">🔊 Listen</button>
+    <button class="green" onclick="playStory()">🔊 Listen</button>
     <button class="orange" onclick="startStoryRecording()">🎙️ Start Retelling</button>
-    <button class="gray"   id="stopStoryButton" onclick="stopStoryRecording()" disabled>⏹️ Stop</button>
-    <button class="gray"   id="playStoryButton" onclick="playBlob(recordedStoryBlob)" disabled>▶️ Play My Work</button>
+    <button class="gray" id="stopStoryButton" onclick="stopStoryRecording()" disabled>⏹️ Stop</button>
+    <button class="gray" id="playStoryButton" onclick="playBlob(recordedStoryBlob)" disabled>▶️ Play My Work</button>
     <button class="purple" onclick="redoStory()">🔁 Redo</button>
-    <button class="blue"   onclick="showOriginalStory()">📖 View Story</button>
-    <button class="blue"   onclick="rateStory()">⭐ Rate My Work</button>
-    <button class="dark"   onclick="loadNewStory()">🔄 Next Story</button>
+    <button class="blue" onclick="showOriginalStory()">📖 View Story</button>
+    <button class="blue" onclick="rateStory()">⭐ Rate My Work</button>
+    <button class="dark" onclick="loadNewStory()">🔄 Next Story</button>
   </div>
 
   <div id="storyStatus"></div>
@@ -318,42 +222,29 @@
 <!-- Section 6: Opinion Speaking -->
 <!-- ========================= -->
 <div class="section" id="opinionSpeakingSection">
-  <h2>Part 6: Opinion Speaking</h2>
-  <p style="font-size:13px;color:#e07000;margin-bottom:6px;">自分の意見をはっきり伝える練習です。理由や例を加えるとより良くなります。</p>
-  <p>📋 <strong>Directions:</strong> Listen to the question. Think briefly. Speak clearly for 20–30 seconds (max 40s).</p>
+  <h2>💬 Versant Opinion Speaking Practice</h2>
+  <p style="font-size: 16px; color: #555;">
+    📋 <strong>Directions:</strong> Listen to the question. Think briefly. Speak clearly for 20–30 seconds (max 40s).
+  </p>
   <p id="opinionPromptText">[Press 🔊 Listen to hear the question]</p>
   <textarea id="opinionUserResponse" placeholder="Your answer will appear here..."></textarea>
 
   <div class="button-group">
-    <button class="green"  onclick="playOpinion()">🔊 Listen</button>
+    <button class="green" onclick="playOpinion()">🔊 Listen</button>
     <button class="orange" onclick="startOpinionRecording()">🎙️ Start Speaking</button>
-    <button class="gray"   id="stopOpinionButton" onclick="stopOpinionRecording()" disabled>⏹️ Stop</button>
-    <button class="gray"   id="playOpinionButton" onclick="playBlob(recordedOpinionBlob)" disabled>▶️ Play My Work</button>
+    <button class="gray" id="stopOpinionButton" onclick="stopOpinionRecording()" disabled>⏹️ Stop</button>
+    <button class="gray" id="playOpinionButton" onclick="playBlob(recordedOpinionBlob)" disabled>▶️ Play My Work</button>
     <button class="purple" onclick="redoOpinion()">🔁 Redo</button>
-    <button class="blue"   onclick="showOriginalOpinion()">📖 View Question</button>
-    <button class="blue"   onclick="rateOpinion()">⭐ Rate My Work</button>
-    <button class="dark"   onclick="nextOpinion()">🔄 Next Question</button>
+    <button class="blue" onclick="showOriginalOpinion()">📖 View Question</button>
+    <button class="blue" onclick="rateOpinion()">⭐ Rate My Work</button>
+    <button class="dark" onclick="nextOpinion()">🔄 Next Question</button>
   </div>
 
   <div id="opinionStatus"></div>
   <div id="opinionRatingBox" style="display:none;"></div>
 </div>
 
-</div><!-- /#page-content -->
-
 <script>
-/* =========================================================
-   TAB SWITCHING
-   ========================================================= */
-function switchTab(sectionId, clickedBtn) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active-section'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById(sectionId).classList.add('active-section');
-  clickedBtn.classList.add('active');
-  clickedBtn.scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' });
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
 /* =========================================================
    SHARED HELPERS (TTS & STT)
    ========================================================= */
@@ -615,9 +506,7 @@ function resampleFloat32(input, inSampleRate, outSampleRate) {
   console.log("[resample] outputLength=", output.length);
   return output;
 }
-
 let lastPlaybackBuffer = null;
-
 function encodeWavMono(samplesFloat32, sampleRate) {
   const header = writeWavHeader(sampleRate, samplesFloat32.length);
   const pcm = floatTo16BitPCM(samplesFloat32);
@@ -695,47 +584,46 @@ async function prepareRecorder(where, maxMs) {
       try { ctx.close(); } catch {}
     }
 
-    function buildWav(sr) {
-      let total = 0;
-      for (const c of chunks) total += c.length;
+function buildWav(sr) {
+  let total = 0;
+  for (const c of chunks) total += c.length;
 
-      console.log("[buildWav] chunks=", chunks.length, "totalSamples=", total, "sr=", sr);
+  console.log("[buildWav] chunks=", chunks.length, "totalSamples=", total, "sr=", sr);
 
-      const mono = new Float32Array(total);
-      let off = 0;
-      for (const c of chunks) {
-        mono.set(c, off);
-        off += c.length;
-      }
+  const mono = new Float32Array(total);
+  let off = 0;
+  for (const c of chunks) {
+    mono.set(c, off);
+    off += c.length;
+  }
 
-      let max = 0;
-      for (let i = 0; i < mono.length; i++) {
-        if (Math.abs(mono[i]) > max) max = Math.abs(mono[i]);
-      }
-      console.log("[buildWav] peakBeforeNorm=", max);
+  let max = 0;
+  for (let i = 0; i < mono.length; i++) {
+    if (Math.abs(mono[i]) > max) max = Math.abs(mono[i]);
+  }
+  console.log("[buildWav] peakBeforeNorm=", max);
 
-      if (max > 0.01) {
-        for (let i = 0; i < mono.length; i++) {
-          mono[i] = mono[i] / max;
-        }
-        console.log("[buildWav] normalization applied");
-      } else {
-        console.warn("[buildWav] peak too low, normalization skipped");
-      }
-
-      const targetSampleRate = 16000;
-      const resampled = resampleFloat32(mono, sr, targetSampleRate);
-
-      lastPlaybackBuffer = {
-        samples: resampled,
-        sampleRate: targetSampleRate
-      };
-
-      console.log("[buildWav] finalSamples=", resampled.length, "targetSR=", targetSampleRate);
-
-      return encodeWavMono(resampled, targetSampleRate);
+  if (max > 0.01) {
+    for (let i = 0; i < mono.length; i++) {
+      mono[i] = mono[i] / max;
     }
+    console.log("[buildWav] normalization applied");
+  } else {
+    console.warn("[buildWav] peak too low, normalization skipped");
+  }
 
+  const targetSampleRate = 16000;
+  const resampled = resampleFloat32(mono, sr, targetSampleRate);
+
+  lastPlaybackBuffer = {
+    samples: resampled,
+    sampleRate: targetSampleRate
+  };
+
+  console.log("[buildWav] finalSamples=", resampled.length, "targetSR=", targetSampleRate);
+
+  return encodeWavMono(resampled, targetSampleRate);
+}
     let resolveBlob;
     const blobPromise = new Promise(r => (resolveBlob = r));
 
@@ -801,7 +689,7 @@ async function recordAudioUnified(where, maxMs, stopButtonId) {
       await new Promise(r => setTimeout(r, 1000));
     }
     statusEl.textContent = "🎙 Start speaking!";
-    await new Promise(r => setTimeout(r, 300)); // tiny "beep" pause
+    await new Promise(r => setTimeout(r, 300)); // tiny “beep” pause
   }
 
   // 3) Lock UI & show recording countdown, then START capture instantly
@@ -1063,25 +951,12 @@ async function rateQuestion() {
     body: JSON.stringify({
       model: "gpt-3.5-turbo",
       messages: [
-       { role: "system", content:
-`You are a supportive English speaking evaluator.
-
-Focus mainly on meaning and whether the answer successfully responds to the question.
-
-Do NOT heavily penalize:
-- missing articles (a, the)
-- plural -s
-- minor preposition issues
-
-If meaning is clear, give a high score.
-
-If there is a small grammar issue, mention it briefly but do not overemphasize it.
-
+        { role: "system", content:
+`You are an English evaluator.
+Judge word content and meaning clarity only; ignore punctuation and capitalization.
 Format:
 Score: X / 5
-Feedback: [short, positive comment + one light suggestion if needed]
-Sample Answer: [1–2 natural short answers to the question]`
-},
+Feedback: [short supportive comment]` },
         { role: "user", content: `Question: "${currentQuestion}"\nStudent's Answer: "${student}"` }
       ]
     })
@@ -1104,177 +979,36 @@ let recordedSentenceBlob = null;
 
 async function preloadSentences() {
   statusUpdate("sentence", "🧠 Loading sentence builds...");
-
-  function shuffleArray(arr) {
-    const copy = [...arr];
-    for (let i = copy.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [copy[i], copy[j]] = [copy[j], copy[i]];
-    }
-    return copy;
-  }
-
-  function arraysEqual(a, b) {
-    return a.length === b.length && a.every((v, i) => v === b[i]);
-  }
-
-  function isValidChunkSet(parts) {
-    if (!Array.isArray(parts) || parts.length !== 3) return false;
-
-    const cleaned = parts.map(p => p.trim());
-
-    if (cleaned.some(p => !p)) return false;
-    if (cleaned.some(p => p.length < 2)) return false;
-    if (cleaned.some(p => p.length > 30)) return false;
-
-    // Reject chunks that look like explanations or bad output
-    const joined = cleaned.join(" ").toLowerCase();
-    if (
-      joined.includes("example:") ||
-      joined.includes("good examples") ||
-      joined.includes("bad examples") ||
-      joined.includes("format") ||
-      joined.includes("rules:")
-    ) {
-      return false;
-    }
-
-    return true;
-  }
-
-  function makeScrambledItem(parts) {
-    const original = parts.map(p => p.trim());
-    if (!isValidChunkSet(original)) return null;
-
-    let shuffled = shuffleArray(original);
-    let tries = 0;
-
-    // Ensure scrambled order is different from original
-    while (arraysEqual(shuffled, original) && tries < 10) {
-      shuffled = shuffleArray(original);
-      tries++;
-    }
-
-    if (arraysEqual(shuffled, original)) return null;
-
-    return shuffled;
-  }
-
   const res = await fetch("/api/openai", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       model: "gpt-3.5-turbo",
-      messages: [{
-        role: "user",
-        content:
-`Give me 40 Versant-style Sentence Build source items.
-
-Rules:
-- Each item must be one natural English sentence broken into exactly 3 short phrases.
-- Output the 3 phrases in the CORRECT sentence order.
-- Keep them A2 to early B1.
-- Keep phrases short and natural.
-- Output one item per line only.
-- Use this format only:
-phrase 1 | phrase 2 | phrase 3
-
-Good examples:
-the boy | plays soccer | after school
-she goes | by bus | to work every day
-they met | at the station | yesterday
-
-Do not number the lines.
-Do not add headings.
-Do not add explanations.`
-      }]
+      messages: [{ role: "user", content:
+`Give me 30 very simple English sentence builds (A2–early B1).
+Each line has 3 phrases separated by "|".
+Example: the boy | plays | soccer after school` }]
     })
   });
-
   const data = await res.json();
   const text = data?.choices?.[0]?.message?.content || "";
-
-  const rawLines = text
-    .split("\n")
-    .map(s => s.trim())
-    .filter(Boolean);
-
-  const parsed = rawLines
-    .filter(line => line.includes("|"))
-    .map(line => line.split("|").map(s => s.trim()))
-    .map(parts => makeScrambledItem(parts))
-    .filter(Boolean);
-
-  sentenceList = parsed.map(parts => parts.join(" | "));
-
-  statusUpdate(
-    "sentence",
-    sentenceList.length ? `✅ ${sentenceList.length} Sentence Sets Loaded!` : "❌ Failed to load."
-  );
-
+  sentenceList = text.split("\n").map(s => s.replace(/^\d+\.\s*/, "").trim()).filter(Boolean);
+  statusUpdate("sentence", sentenceList.length ? "✅ 30 Sentence Sets Loaded!" : "❌ Failed to load.");
   loadAnotherSentence();
 }
 
 function loadAnotherSentence() {
-  if (!sentenceList.length) {
-    statusUpdate("sentence", "⚠️ No sentences loaded yet.");
-    return;
-  }
-
-  function isWeakSentenceItem(parts) {
-    if (!Array.isArray(parts) || parts.length !== 3) return true;
-
-    const cleaned = parts.map(s => s.trim());
-
-    if (cleaned.some(s => !s)) return true;
-    if (cleaned.some(s => s.length < 2)) return true;
-    if (cleaned.some(s => s.length > 30)) return true;
-
-    const joined = cleaned.join(" ").toLowerCase();
-
-    if (
-      joined.includes("example:") ||
-      joined.includes("good examples") ||
-      joined.includes("bad examples") ||
-      joined.includes("format") ||
-      joined.includes("rules:")
-    ) {
-      return true;
-    }
-
-    return false;
-  }
-
-  let tries = 0;
-  let picked = null;
-
-  while (tries < 30 && !picked) {
-    const i = Math.floor(Math.random() * sentenceList.length);
-    const parts = sentenceList[i].split("|").map(s => s.trim());
-
-    if (!isWeakSentenceItem(parts)) {
-      picked = parts;
-    }
-    tries++;
-  }
-
-  if (!picked) {
-    statusUpdate("sentence", "❌ Could not find a good sentence set.");
-    return;
-  }
-
-  currentPhrases = picked;
+  if (!sentenceList.length) { statusUpdate("sentence", "⚠️ No sentences loaded yet."); return; }
+  const i = Math.floor(Math.random() * sentenceList.length);
+  currentPhrases = sentenceList[i].split("|").map(s => s.trim());
   document.getElementById("sentencePromptText").innerText = "[Phrases are ready. Please click 🔊 Listen]";
   document.getElementById("sentenceUserResponse").value = "";
   document.getElementById("sentenceRatingBox").style.display = "none";
   statusUpdate("sentence", "✅ New set ready.");
 }
-async function playSentencePhrases() {
-  if (currentPhrases.length !== 3) {
-    statusUpdate("sentence", "⚠️ No phrase set ready.");
-    return;
-  }
 
+async function playSentencePhrases() {
+  if (currentPhrases.length !== 3) { statusUpdate("sentence", "⚠️ No phrase set ready."); return; }
   statusUpdate("sentence", "🔊 Playing phrases...");
   for (const phrase of currentPhrases) {
     await speakText(phrase, "sentence");
@@ -1283,16 +1017,12 @@ async function playSentencePhrases() {
 }
 
 function showSentencePhrases() {
-  if (!currentPhrases.length) {
-    statusUpdate("sentence", "⚠️ No set loaded.");
-    return;
-  }
-
+  if (!currentPhrases.length) { statusUpdate("sentence", "⚠️ No set loaded."); return; }
   document.getElementById("sentencePromptText").innerText = currentPhrases.join(" → ");
   statusUpdate("sentence", "👁️ Phrases shown.");
 }
-async function startSentenceRecording() {
 
+async function startSentenceRecording() {
   const blob = await recordAudioUnified("sentence", 6000);
   recordedSentenceBlob = blob;
   const text = await transcribeAudio(blob, "sentence");
@@ -1311,28 +1041,13 @@ async function rateSentence() {
     body: JSON.stringify({
       model: "gpt-3.5-turbo",
       messages: [
-       { role: "system", content:
-`You are a supportive English evaluator for a Versant-style Sentence Build task.
-
-The learner hears 3 scrambled phrases and rearranges them into one sentence.
-
-Evaluate mainly:
-1. whether the sentence successfully rearranges the ideas
-2. whether the sentence is understandable and natural
-
-Do NOT heavily penalize:
-- missing articles
-- small preposition mistakes
-- missing plural -s
-- small wording differences
-
-If the sentence is understandable and the ideas are arranged correctly, score should usually be 4 or 5.
-
+        { role: "system", content:
+`You are an English evaluator.
+Evaluate word content, natural order, and meaning clarity.
+Completely ignore punctuation and capitalization.
 Format:
 Score: X / 5
-Feedback: [positive comment + one light suggestion if needed]
-Correct Sentence: [one natural full sentence using all the given phrases]`
-},
+Feedback: [supportive, short comment]` },
         { role: "user", content: `Phrases: "${currentPhrases.join(' → ')}"\nStudent's Sentence: "${student}"` }
       ]
     })
@@ -1405,11 +1120,6 @@ function stopStoryRecording() {
   statusUpdate("story", "⏹️ Stopping...", 1000);
 }
 
-function redoStory() {
-  document.getElementById("storyUserResponse").value = "";
-  statusUpdate("story", "🔁 Cleared. Try again.");
-}
-
 async function rateStory() {
   const transcript = (document.getElementById("storyUserResponse").value || "").trim();
   if (!transcript) { statusUpdate("story", "⚠️ No retelling to rate."); return; }
@@ -1421,24 +1131,14 @@ async function rateStory() {
     body: JSON.stringify({
       model: "gpt-3.5-turbo",
       messages: [
-       { role: "system", content:
-`You are a supportive English speaking evaluator.
-
-Evaluate based on:
-- how much of the story is covered
-- clarity and flow of ideas
-
-Ignore punctuation and capitalization completely.
-
-Do NOT penalize small grammar mistakes unless they block understanding.
-
+        { role: "system", content:
+`You are a kind, supportive English evaluator for story retelling.
+Judge coverage of the given story only (no imagined details).
+Completely ignore punctuation and capitalization.
+Scoring: 5 clear coverage → 1 no understandable speech.
 Format:
 Score: X / 5
-Feedback: [positive summary + one suggestion]
-
-Model Retelling:
-[Give a simple, clear version of the story in 2–3 sentences, natural spoken English]`
-},
+Feedback: [positive comment + one technical tip]` },
         { role: "user", content: `Student's Retelling: "${transcript}"` }
       ]
     })
@@ -1529,31 +1229,19 @@ async function rateOpinion() {
       model: "gpt-3.5-turbo",
       messages: [
         { role: "system", content:
-`You are a supportive English speaking evaluator.
-
-Focus on:
-- clarity of opinion
-- basic structure (reason or example)
-- natural communication
-
-Do NOT heavily penalize:
-- grammar mistakes
-- missing articles or plural forms
-
-If the message is clear, score should be 4 or higher.
-
+`You are an English speaking evaluator.
+Respect the student's meaning; do not over-correct.
+Ignore punctuation and capitalization entirely.
+Score:
+5 clear/expanded, 4 clear but general, 3 understandable/vague,
+2 hard to connect ideas, 1 very simple/incomplete.
 Format:
-Corrected Version:
-[Rewrite the student's answer in natural spoken English]
-
+Corrected Opinion:
+[Show corrected student's opinion in natural spoken style]
 Score: X / 5
-
-Feedback:
-[positive + one suggestion]
-
-Model Answer:
-[Give a natural 3–4 sentence sample answer, easy to speak]`
-},
+Feedback: [warm, specific advice]
+Sample Full-Mark Answer:
+[~60–80 words, 3–5 short sentences, natural and speakable]` },
         { role: "user", content: `Question: "${currentOpinion}"\nStudent's Opinion: "${student}"` }
       ]
     })
